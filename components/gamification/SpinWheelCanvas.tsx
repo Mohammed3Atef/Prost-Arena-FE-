@@ -147,9 +147,9 @@ export default function SpinWheelCanvas({
       let startTs: number | null = null;
       const duration = 4500; // ms
 
-      function easeOut(t: number) { return 1 - Math.pow(1 - t, 4); }
+      const easeOut = (t: number) => 1 - Math.pow(1 - t, 4);
 
-      function step(ts: number) {
+      const step = (ts: number) => {
         if (!startTs) startTs = ts;
         const elapsed  = ts - startTs;
         const progress = Math.min(elapsed / duration, 1);
@@ -166,7 +166,7 @@ export default function SpinWheelCanvas({
           setSpinning(false);
           onComplete?.(result);
         }
-      }
+      };
 
       requestAnimationFrame(step);
     } catch {

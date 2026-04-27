@@ -66,7 +66,7 @@ export default function SpinPage() {
       {wheel ? (
         <SpinWheelCanvas
           segments={wheel.segments ?? []}
-          canSpin={avail?.canSpin ?? false}
+          disabled={!(avail?.canSpin ?? false)}
           onSpin={handleSpin}
           onComplete={handleComplete}
         />

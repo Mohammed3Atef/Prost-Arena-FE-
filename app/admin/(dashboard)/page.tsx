@@ -160,16 +160,3 @@ function generateMockChart() {
     };
   });
 }
-}
-
-function generateMockChart() {
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    return {
-      date:    d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      orders:  Math.floor(Math.random() * 20),
-      revenue: Math.floor(Math.random() * 500),
-    };
-  });
-}
