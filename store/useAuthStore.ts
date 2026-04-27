@@ -1,10 +1,24 @@
 /**
  * Auth Store (Zustand)
- * Persists accessToken in memory; refreshToken in httpOnly cookie (handled server-side).
+ * Persists accessToken in localStorage (`pa-auth`).
+ * Stores refreshToken separately in `pa-refresh-token` for the axios refresh
+ * interceptor to read.
  */
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import api from '../services/api/client';
+
+const REFRESH_TOKEN_KEY = 'pa-refresh-token';
+
+function setRefreshToken(token: string | null | undefined) {
+  if (typeof window === 'undefined') return;
+  if (token) localStorage.setItem(REFRESH_TOKEN_KEY, token);
+}
+
+function clearRefreshToken() {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+}
 
 interface User {
   _id:            string;
@@ -56,6 +70,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           const { data } = await api.post('/auth/login', { email, password });
           api.defaults.headers.common['Authorization'] = `Bearer ${data.data.accessToken}`;
+          setRefreshToken(data.data.refreshToken);
           set({ user: data.data.user, accessToken: data.data.accessToken, isLoading: false });
         } catch (err) {
           set({ isLoading: false });
@@ -68,6 +83,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           const { data } = await api.post('/auth/register', payload);
           api.defaults.headers.common['Authorization'] = `Bearer ${data.data.accessToken}`;
+          setRefreshToken(data.data.refreshToken);
           set({ user: data.data.user, accessToken: data.data.accessToken, isLoading: false });
         } catch (err) {
           set({ isLoading: false });
@@ -80,6 +96,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           const { data } = await api.post('/auth/guest', payload);
           api.defaults.headers.common['Authorization'] = `Bearer ${data.data.accessToken}`;
+          setRefreshToken(data.data.refreshToken);
           set({ user: data.data.user, accessToken: data.data.accessToken, isLoading: false });
         } catch (err) {
           set({ isLoading: false });
@@ -89,6 +106,7 @@ export const useAuthStore = create<AuthState>()(
 
       logout: () => {
         delete api.defaults.headers.common['Authorization'];
+        clearRefreshToken();
         set({ user: null, accessToken: null });
       },
 

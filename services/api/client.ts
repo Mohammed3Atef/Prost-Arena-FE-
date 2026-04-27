@@ -5,10 +5,9 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
+  baseURL: '/api',
   timeout: 15000,
   headers: { 'Content-Type': 'application/json' },
-  withCredentials: true,
 });
 
 // ── Response interceptor — handle token refresh on 401 ────────────────────
@@ -44,8 +43,12 @@ api.interceptors.response.use(
 
         const { data } = await api.post('/auth/refresh', { refreshToken });
         const newToken  = data.data.accessToken;
+        const newRefresh = data.data.refreshToken;
 
         api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+        if (typeof window !== 'undefined' && newRefresh) {
+          localStorage.setItem('pa-refresh-token', newRefresh);
+        }
         processQueue(null, newToken);
 
         originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
@@ -55,6 +58,7 @@ api.interceptors.response.use(
         // Force logout
         if (typeof window !== 'undefined') {
           localStorage.removeItem('pa-auth');
+          localStorage.removeItem('pa-refresh-token');
           window.location.href = '/login';
         }
         return Promise.reject(refreshError);

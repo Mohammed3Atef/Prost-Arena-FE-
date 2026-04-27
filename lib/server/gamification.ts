@@ -1,0 +1,56 @@
+import { randomBytes } from 'crypto';
+
+const REFERRAL_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+export function xpForLevel(level: number): number {
+  return level * level * 100;
+}
+
+export function levelFromXp(xp: number): number {
+  let level = 1;
+  while (xpForLevel(level + 1) <= xp) level++;
+  return level;
+}
+
+export function xpToNextLevel(xp: number): number {
+  const current = levelFromXp(xp);
+  return xpForLevel(current + 1) - xp;
+}
+
+export function xpProgressInLevel(xp: number) {
+  const level = levelFromXp(xp);
+  const levelStart = xpForLevel(level);
+  const levelEnd = xpForLevel(level + 1);
+  const progress = xp - levelStart;
+  const required = levelEnd - levelStart;
+  return { level, progress, required, percentage: Math.floor((progress / required) * 100) };
+}
+
+function randomCode(length: number, alphabet = REFERRAL_ALPHABET): string {
+  const bytes = randomBytes(length);
+  let out = '';
+  for (let i = 0; i < length; i++) {
+    out += alphabet[bytes[i] % alphabet.length];
+  }
+  return out;
+}
+
+export function generateReferralCode(): string {
+  return `PA-${randomCode(8)}`;
+}
+
+const XP_PER_ORDER = parseInt(process.env.XP_PER_ORDER || '50', 10);
+const POINTS_PER_CURRENCY_UNIT = 5;
+
+export function calcOrderXp(order: { total: number }): number {
+  const base = XP_PER_ORDER;
+  const bonus = Math.floor(order.total / 10);
+  return base + bonus;
+}
+
+export function calcOrderPoints(order: { total: number }): number {
+  return Math.floor(order.total * POINTS_PER_CURRENCY_UNIT);
+}
+
+export const XP_PER_CHALLENGE_WIN = parseInt(process.env.XP_PER_CHALLENGE_WIN || '100', 10);
+export const XP_PER_REFERRAL = parseInt(process.env.XP_PER_REFERRAL || '75', 10);
