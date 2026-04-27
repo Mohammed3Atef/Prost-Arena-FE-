@@ -1,3 +1,4 @@
+import '@/lib/models';
 import jwt, { type SignOptions } from 'jsonwebtoken';
 import type { NextRequest } from 'next/server';
 import { dbConnect } from '@/lib/db/mongoose';

@@ -1,3 +1,4 @@
+import '@/lib/models';
 import { dbConnect } from '@/lib/db/mongoose';
 import { ok } from '@/lib/server/response';
 import { handleError } from '@/lib/server/error';

@@ -1,3 +1,4 @@
+import '@/lib/models';
 import type { NextRequest } from 'next/server';
 import { dbConnect } from '@/lib/db/mongoose';
 import { created } from '@/lib/server/response';

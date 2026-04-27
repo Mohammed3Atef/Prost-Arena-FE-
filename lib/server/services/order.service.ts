@@ -1,3 +1,4 @@
+import '@/lib/models';
 import { Order, type IOrder } from '@/lib/db/models/order';
 import { MenuItem } from '@/lib/db/models/menuItem';
 import { User } from '@/lib/db/models/user';

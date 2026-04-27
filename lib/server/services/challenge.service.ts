@@ -1,3 +1,4 @@
+import '@/lib/models';
 import type { Types } from 'mongoose';
 import { Challenge, type IChallenge } from '@/lib/db/models/challenge';
 import { Question } from '@/lib/db/models/question';

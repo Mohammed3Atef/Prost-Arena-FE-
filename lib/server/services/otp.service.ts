@@ -1,3 +1,4 @@
+import '@/lib/models';
 import { OtpCode } from '@/lib/db/models/otpCode';
 import { operationalError } from '@/lib/server/error';
 

@@ -1,3 +1,4 @@
+import '@/lib/models';
 import { randomBytes } from 'crypto';
 import { User, type IUser } from '@/lib/db/models/user';
 import { Referral } from '@/lib/db/models/referral';

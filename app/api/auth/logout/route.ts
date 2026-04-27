@@ -1,3 +1,4 @@
+import '@/lib/models';
 import { ok } from '@/lib/server/response';
 import { handleError } from '@/lib/server/error';
 

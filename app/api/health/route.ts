@@ -1,3 +1,4 @@
+import '@/lib/models';
 import { ok } from '@/lib/server/response';
 
 export const dynamic = 'force-dynamic';

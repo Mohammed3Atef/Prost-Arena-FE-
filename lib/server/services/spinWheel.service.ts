@@ -1,3 +1,4 @@
+import '@/lib/models';
 import type { Types } from 'mongoose';
 import { SpinWheelConfig, SpinLog, type ISpinSegment } from '@/lib/db/models/spinWheel';
 import { UserReward } from '@/lib/db/models/userReward';
