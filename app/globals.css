@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Base resets ────────────────────────────────────────────────────────── */
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html {
+    scroll-behavior: smooth;
+    overflow-x: hidden; /* must be on html AND body to prevent horizontal scroll */
+  }
+
+  body {
+    @apply antialiased;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Remove tap highlight on mobile */
+  * { -webkit-tap-highlight-color: transparent; }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { @apply bg-transparent; }
+  ::-webkit-scrollbar-thumb { @apply bg-gray-300 dark:bg-gray-700 rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-brand-400; }
+}
+
+/* ── Component helpers ──────────────────────────────────────────────────── */
+@layer components {
+
+  /* Page container */
+  .container-app {
+    @apply mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl w-full;
+    overflow-x: hidden;
+  }
+
+  /* Card */
+  .card {
+    @apply bg-white dark:bg-arena-700 rounded-2xl border border-gray-100 dark:border-arena-600
+           shadow-sm hover:shadow-md transition-shadow duration-200;
+  }
+
+  .card-glass {
+    @apply bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl;
+  }
+
+  /* Primary button */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3
+           bg-brand-500 hover:bg-brand-600 active:bg-brand-700
+           text-white font-semibold rounded-xl
+           transition-all duration-200 ease-out
+           disabled:opacity-50 disabled:cursor-not-allowed
+           focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-arena-900;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3
+           bg-gray-100 dark:bg-arena-700 hover:bg-gray-200 dark:hover:bg-arena-600
+           text-gray-900 dark:text-gray-100 font-semibold rounded-xl
+           transition-all duration-200;
+  }
+
+  .field-label {
+    @apply block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2
+           text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100
+           hover:bg-gray-100 dark:hover:bg-arena-700 rounded-lg
+           transition-all duration-200;
+  }
+
+  /* XP Bar */
+  .xp-bar {
+    @apply h-2 rounded-full bg-gray-200 dark:bg-arena-600 overflow-hidden;
+  }
+
+  .xp-bar-fill {
+    @apply h-full rounded-full bg-gradient-to-r from-brand-400 to-gold-500
+           transition-all duration-1000 ease-out;
+  }
+
+  /* Badge pill */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+
+  .badge-brand { @apply badge bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300; }
+  .badge-gold  { @apply badge bg-gold-100 dark:bg-gold-900/30 text-gold-700 dark:text-gold-400; }
+  .badge-green { @apply badge bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400; }
+
+  /* Input */
+  .input {
+    @apply w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-arena-600
+           bg-white dark:bg-arena-700 text-gray-900 dark:text-gray-100
+           placeholder-gray-400 dark:placeholder-gray-500
+           focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
+           transition-all duration-200;
+  }
+
+  /* Section heading */
+  .section-title {
+    @apply text-xl sm:text-2xl font-display font-bold text-gray-900 dark:text-gray-100;
+  }
+
+  /* Shimmer skeleton */
+  .skeleton {
+    @apply animate-shimmer bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200
+           dark:from-arena-700 dark:via-arena-600 dark:to-arena-700
+           bg-[length:200%_100%] rounded-lg;
+  }
+
+  /* Level badge ring */
+  .level-ring {
+    @apply relative inline-flex items-center justify-center rounded-full
+           bg-gradient-to-br from-brand-400 to-gold-500 p-0.5;
+  }
+}
+
+/* ── Utilities ──────────────────────────────────────────────────────────── */
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-brand-400 to-gold-500 bg-clip-text text-transparent;
+  }
+
+  .glow-brand {
+    box-shadow: 0 0 20px rgba(255, 107, 53, 0.4);
+  }
+
+  .glow-gold {
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+  }
+}
