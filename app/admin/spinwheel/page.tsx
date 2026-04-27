@@ -14,11 +14,9 @@ interface Segment {
 
 const SEGMENT_TYPES = ['xp_boost', 'points', 'empty', 'free_item'] as const;
 const PALETTE = ['#ff6b35','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ef4444','#06b6d4','#ec4899','#84cc16','#f97316'];
-
 const EMPTY_SEG: Segment = { label: '', type: 'xp_boost', xpAmount: 50, pointsAmount: 0, probability: 0.1, color: '#ff6b35', icon: '⚡' };
 
 export default function AdminSpinWheelPage() {
-  const [wheel,     setWheel]     = useState<{ _id?: string; name: string; spinCooldownHours: number; segments: Segment[] } | null>(null);
   const [loading,   setLoading]   = useState(true);
   const [saving,    setSaving]    = useState(false);
   const [segments,  setSegments]  = useState<Segment[]>([]);
@@ -28,7 +26,6 @@ export default function AdminSpinWheelPage() {
   useEffect(() => {
     api.get('/spin/wheel').then((r) => {
       const w = r.data.data;
-      setWheel(w);
       setSegments(w.segments ?? []);
       setCooldown(w.spinCooldownHours ?? 24);
       setWheelName(w.name ?? 'Default Wheel');
@@ -41,127 +38,179 @@ export default function AdminSpinWheelPage() {
     setSegments((p) => p.map((s, idx) => idx === i ? { ...s, [field]: value } : s));
   };
 
-  const addSegment = () => setSegments((p) => [...p, { ...EMPTY_SEG, color: PALETTE[p.length % PALETTE.length] }]);
-
-  const removeSeg = (i: number) => setSegments((p) => p.filter((_, idx) => idx !== i));
+  const addSegment  = () => setSegments((p) => [...p, { ...EMPTY_SEG, color: PALETTE[p.length % PALETTE.length] }]);
+  const removeSeg   = (i: number) => setSegments((p) => p.filter((_, idx) => idx !== i));
 
   const autoBalance = () => {
+    if (!segments.length) return;
     const each = parseFloat((1 / segments.length).toFixed(4));
     setSegments((p) => p.map((s) => ({ ...s, probability: each })));
     toast.success('Probabilities balanced equally');
   };
 
   const save = async () => {
-    if (segments.length < 2) return toast.error('Need at least 2 segments');
-    if (segments.some((s) => !s.label.trim())) return toast.error('All segments need a label');
-    const sum = segments.reduce((a, s) => a + s.probability, 0);
-    if (Math.abs(sum - 1) > 0.01) return toast.error(`Probabilities must sum to 1.00 (currently ${sum.toFixed(3)})`);
+    if (segments.length < 2)                        return toast.error('Need at least 2 segments');
+    if (segments.some((s) => !s.label.trim()))      return toast.error('All segments need a label');
+    if (Math.abs(totalProb - 1) > 0.01)             return toast.error(`Probabilities must sum to 1.00 (currently ${totalProb.toFixed(3)})`);
 
     setSaving(true);
     try {
       await api.put('/spin/wheel', { name: wheelName, spinCooldownHours: cooldown, segments });
       toast.success('Wheel saved!');
-    } catch (e: any) { toast.error(e?.response?.data?.message || 'Save failed'); }
-    finally { setSaving(false); }
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || 'Save failed');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  if (loading) return <div className="skeleton h-64 rounded-2xl" />;
+  if (loading) return (
+    <div className="flex items-center justify-center py-16">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500" />
+    </div>
+  );
+
+  const probPct = Math.round(totalProb * 100);
+  const probOk  = Math.abs(totalProb - 1) <= 0.01;
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-display font-bold text-gray-900 dark:text-gray-100">Spin Wheel</h1>
-          <p className="text-sm text-gray-400 mt-0.5">{segments.length} segments · probability sum: <span className={cn('font-semibold', Math.abs(totalProb - 1) < 0.01 ? 'text-green-500' : 'text-red-500')}>{totalProb.toFixed(3)}</span></p>
+          <p className="text-sm text-gray-400 mt-0.5">Configure segments and probabilities</p>
         </div>
-        <div className="flex gap-2">
-          <button onClick={autoBalance} className="btn-secondary gap-2 text-sm"><RefreshCw size={14} /> Auto-balance</button>
-          <button onClick={save} disabled={saving} className="btn-primary gap-2 text-sm"><Save size={14} /> {saving ? 'Saving…' : 'Save Wheel'}</button>
+        <button onClick={save} disabled={saving} className="btn-primary flex items-center gap-2 text-sm">
+          <Save size={15} /> {saving ? 'Saving…' : 'Save Changes'}
+        </button>
+      </div>
+
+      {/* Wheel settings */}
+      <div className="card space-y-4">
+        <h2 className="font-semibold text-gray-900 dark:text-gray-100">Wheel Settings</h2>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Wheel Name</label>
+            <input value={wheelName} onChange={(e) => setWheelName(e.target.value)} className="input w-full" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cooldown (hours between spins)</label>
+            <input type="number" min="1" max="168" value={cooldown} onChange={(e) => setCooldown(Number(e.target.value))} className="input w-full" />
+          </div>
         </div>
       </div>
 
-      {/* Wheel Settings */}
-      <div className="card p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className="field-label">Wheel Name</label>
-          <input className="input" value={wheelName} onChange={(e) => setWheelName(e.target.value)} />
+      {/* Probability meter */}
+      <div className="card space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Total probability: <span className={probOk ? 'text-green-500' : 'text-red-500'}>{probPct}%</span>
+            {!probOk && <span className="text-red-500 ml-2 text-xs">Must equal 100%</span>}
+          </span>
+          <button onClick={autoBalance} className="flex items-center gap-1.5 text-xs text-brand-500 hover:text-brand-600 font-medium">
+            <RefreshCw size={12} /> Auto-balance
+          </button>
         </div>
-        <div>
-          <label className="field-label">Spin Cooldown (hours)</label>
-          <input type="number" min="1" max="168" className="input" value={cooldown} onChange={(e) => setCooldown(parseInt(e.target.value))} />
-        </div>
-      </div>
-
-      {/* Visual preview */}
-      <div className="card p-5">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Preview</p>
-        <div className="flex flex-wrap gap-2">
-          {segments.map((seg, i) => (
-            <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-xs font-semibold" style={{ backgroundColor: seg.color }}>
-              <span>{seg.icon}</span><span>{seg.label || 'Untitled'}</span>
-              <span className="opacity-70">({(seg.probability * 100).toFixed(1)}%)</span>
-            </div>
-          ))}
+        <div className="h-2 bg-gray-100 dark:bg-arena-700 rounded-full overflow-hidden">
+          <div className={cn('h-full rounded-full transition-all', probOk ? 'bg-green-500' : probPct > 100 ? 'bg-red-500' : 'bg-brand-500')}
+            style={{ width: `${Math.min(probPct, 100)}%` }} />
         </div>
       </div>
 
       {/* Segments */}
-      <div className="space-y-3">
-        {segments.map((seg, i) => (
-          <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="card p-4">
-            <div className="flex items-start gap-3">
+      <div className="card space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-gray-900 dark:text-gray-100">Segments ({segments.length})</h2>
+          <button onClick={addSegment} className="flex items-center gap-1.5 text-sm text-brand-500 hover:text-brand-600 font-medium">
+            <Plus size={14} /> Add Segment
+          </button>
+        </div>
+
+        {segments.length === 0 && (
+          <p className="text-center text-gray-400 py-8">No segments yet. Add at least 2.</p>
+        )}
+
+        <div className="space-y-3">
+          {segments.map((seg, i) => (
+            <motion.div key={i} layout
+              className="flex gap-3 p-3 bg-gray-50 dark:bg-arena-750 rounded-xl items-start flex-wrap sm:flex-nowrap">
               {/* Color swatch */}
-              <div className="shrink-0 mt-1">
-                <div className="w-8 h-8 rounded-lg border-2 border-gray-200 dark:border-arena-600 overflow-hidden cursor-pointer"
-                  style={{ backgroundColor: seg.color }}>
-                  <input type="color" value={seg.color} onChange={(e) => updateSeg(i, 'color', e.target.value)}
-                    className="opacity-0 w-full h-full cursor-pointer" />
-                </div>
+              <div className="flex flex-col items-center gap-1 shrink-0">
+                <div className="w-8 h-8 rounded-lg border-2 border-white shadow cursor-pointer" style={{ backgroundColor: seg.color }}
+                  onClick={() => {
+                    const idx = PALETTE.indexOf(seg.color);
+                    updateSeg(i, 'color', PALETTE[(idx + 1) % PALETTE.length]);
+                  }} />
+                <span className="text-xs text-gray-400">color</span>
               </div>
 
-              <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                <div className="col-span-2 sm:col-span-1">
-                  <label className="field-label">Label</label>
-                  <input className="input text-sm" value={seg.label} onChange={(e) => updateSeg(i, 'label', e.target.value)} placeholder="50 XP" />
-                </div>
-                <div>
-                  <label className="field-label">Icon</label>
-                  <input className="input text-xl text-center" value={seg.icon} onChange={(e) => updateSeg(i, 'icon', e.target.value)} placeholder="⚡" />
-                </div>
-                <div>
-                  <label className="field-label">Type</label>
-                  <select className="input text-sm" value={seg.type} onChange={(e) => updateSeg(i, 'type', e.target.value)}>
-                    {SEGMENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                </div>
-                {seg.type === 'xp_boost' && (
-                  <div>
-                    <label className="field-label">XP Amount</label>
-                    <input type="number" min="0" className="input text-sm" value={seg.xpAmount} onChange={(e) => updateSeg(i, 'xpAmount', parseInt(e.target.value))} />
-                  </div>
-                )}
-                {seg.type === 'points' && (
-                  <div>
-                    <label className="field-label">Points</label>
-                    <input type="number" min="0" className="input text-sm" value={seg.pointsAmount} onChange={(e) => updateSeg(i, 'pointsAmount', parseInt(e.target.value))} />
-                  </div>
-                )}
-                <div>
-                  <label className="field-label">Probability</label>
-                  <input type="number" step="0.01" min="0" max="1" className="input text-sm" value={seg.probability}
-                    onChange={(e) => updateSeg(i, 'probability', parseFloat(e.target.value))} />
-                </div>
+              {/* Icon */}
+              <div className="shrink-0">
+                <input value={seg.icon} onChange={(e) => updateSeg(i, 'icon', e.target.value)}
+                  className="input w-14 text-center text-lg" maxLength={2} />
               </div>
 
-              <button onClick={() => removeSeg(i)} className="shrink-0 p-1.5 mt-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-500 transition-colors">
-                <Trash2 size={14} />
+              {/* Label */}
+              <div className="flex-1 min-w-32">
+                <input value={seg.label} onChange={(e) => updateSeg(i, 'label', e.target.value)}
+                  className="input w-full text-sm" placeholder="Segment label" />
+              </div>
+
+              {/* Type */}
+              <div className="shrink-0">
+                <select value={seg.type} onChange={(e) => updateSeg(i, 'type', e.target.value)}
+                  className="input text-sm">
+                  {SEGMENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+
+              {/* Amount */}
+              {seg.type === 'xp_boost' && (
+                <div className="shrink-0 w-24">
+                  <input type="number" min="0" value={seg.xpAmount} onChange={(e) => updateSeg(i, 'xpAmount', Number(e.target.value))}
+                    className="input w-full text-sm" placeholder="XP" />
+                </div>
+              )}
+              {seg.type === 'points' && (
+                <div className="shrink-0 w-24">
+                  <input type="number" min="0" value={seg.pointsAmount} onChange={(e) => updateSeg(i, 'pointsAmount', Number(e.target.value))}
+                    className="input w-full text-sm" placeholder="Pts" />
+                </div>
+              )}
+
+              {/* Probability */}
+              <div className="shrink-0 w-24">
+                <input type="number" min="0" max="1" step="0.01" value={seg.probability}
+                  onChange={(e) => updateSeg(i, 'probability', parseFloat(e.target.value) || 0)}
+                  className="input w-full text-sm" placeholder="0.10" />
+              </div>
+
+              {/* Remove */}
+              <button onClick={() => removeSeg(i)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 shrink-0">
+                <Trash2 size={15} />
               </button>
-            </div>
-          </motion.div>
-        ))}
+            </motion.div>
+          ))}
+        </div>
       </div>
 
-      <button onClick={addSegment} className="btn-secondary gap-2 w-full text-sm"><Plus size={15} /> Add Segment</button>
+      {/* Preview */}
+      {segments.length > 0 && (
+        <div className="card">
+          <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Preview</h2>
+          <div className="flex flex-wrap gap-2">
+            {segments.map((seg, i) => (
+              <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-xl text-white text-sm font-semibold"
+                style={{ backgroundColor: seg.color }}>
+                <span>{seg.icon}</span>
+                <span>{seg.label || 'Untitled'}</span>
+                <span className="opacity-75 text-xs">({Math.round(seg.probability * 100)}%)</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
