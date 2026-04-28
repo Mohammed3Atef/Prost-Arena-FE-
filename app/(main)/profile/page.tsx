@@ -14,6 +14,7 @@ import { useLocale } from '../../../components/layout/LocaleProvider';
 import { useSiteSettings } from '../../../components/layout/SiteSettingsProvider';
 import { useConfirm } from '../../../components/ui/ConfirmProvider';
 import AddressFormModal, { type AddressFormValue } from '../../../components/address/AddressFormModal';
+import PasskeyManager from '../../../components/auth/PasskeyManager';
 
 interface UserReward { _id: string; reward: { name: string; type: string; discountPct: number }; status: string; }
 interface UserMission { _id: string; title: string; description: string; target: number; type: string; userProgress: { progress: number; status: string }; }
@@ -255,6 +256,11 @@ export default function ProfilePage() {
         initial={editingAddr}
         saving={addrSaving}
       />
+
+      {/* Security / passkeys */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.19 }}>
+        <PasskeyManager />
+      </motion.div>
 
       {/* Active missions */}
       {missions.length > 0 && (

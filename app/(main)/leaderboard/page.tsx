@@ -104,10 +104,10 @@ export default function LeaderboardPage() {
 
       {/* Top 3 podium */}
       {!loading && entries.length >= 3 && (
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-3 items-end">
           {[entries[1], entries[0], entries[2]].map((entry, podiumIdx) => {
             const rank = podiumIdx === 1 ? 1 : podiumIdx === 0 ? 2 : 3;
-            const heights = ["h-24", "h-28", "h-20"];
+            const heights = ["h-32", "h-36", "h-28"];
             return (
               <motion.div
                 key={entry._id}
@@ -115,15 +115,15 @@ export default function LeaderboardPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: podiumIdx * 0.1 }}
                 className={cn(
-                  "flex flex-col items-center justify-end gap-1 p-2 rounded-2xl border bg-gradient-to-b",
+                  "flex flex-col items-center justify-between gap-1.5 p-3 rounded-2xl border bg-gradient-to-b",
                   RANK_COLORS[rank - 1],
                   heights[podiumIdx],
                 )}
               >
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center text-white font-bold text-xs">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
                   {entry.name?.charAt(0).toUpperCase()}
                 </div>
-                <div className="text-center leading-tight">
+                <div className="text-center leading-tight min-w-0">
                   <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate max-w-[80px]">
                     {entry.name?.split(" ")[0]}
                   </p>
@@ -131,7 +131,7 @@ export default function LeaderboardPage() {
                     {formatNumber(entry.score)}
                   </p>
                 </div>
-                {RANK_ICONS[rank - 1]}
+                <div className="shrink-0">{RANK_ICONS[rank - 1]}</div>
               </motion.div>
             );
           })}

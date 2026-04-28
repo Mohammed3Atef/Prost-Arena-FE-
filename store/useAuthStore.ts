@@ -24,8 +24,10 @@ interface User {
   _id:            string;
   name:           string;
   email:          string;
+  phone?:         string;
   avatar:         string | null;
   role:           'user' | 'admin' | 'superadmin';
+  provider?:      'local' | 'google' | 'facebook';
   xp:             number;
   level:          number;
   points:         number;
@@ -41,12 +43,14 @@ interface AuthState {
   isLoading:    boolean;
   isHydrated:   boolean;
 
-  login:         (email: string, password: string) => Promise<void>;
-  register:      (data: RegisterPayload) => Promise<void>;
-  guestCheckout: (data: GuestPayload) => Promise<void>;
-  logout:        () => void;
-  setUser:       (user: User) => void;
-  refreshUser:   () => Promise<void>;
+  login:            (email: string, password: string) => Promise<void>;
+  register:         (data: RegisterPayload) => Promise<void>;
+  guestCheckout:    (data: GuestPayload) => Promise<void>;
+  signInWithGoogle: (token: string, kind?: 'idToken' | 'accessToken') => Promise<{ isNew: boolean; needsPhone: boolean }>;
+  signInWithBiometric: (assertion: unknown) => Promise<void>;
+  logout:           () => void;
+  setUser:          (user: User) => void;
+  refreshUser:      () => Promise<void>;
 }
 
 interface RegisterPayload {
@@ -82,6 +86,33 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
         try {
           const { data } = await api.post('/auth/register', payload);
+          api.defaults.headers.common['Authorization'] = `Bearer ${data.data.accessToken}`;
+          setRefreshToken(data.data.refreshToken);
+          set({ user: data.data.user, accessToken: data.data.accessToken, isLoading: false });
+        } catch (err) {
+          set({ isLoading: false });
+          throw err;
+        }
+      },
+
+      signInWithGoogle: async (token, kind = 'accessToken') => {
+        set({ isLoading: true });
+        try {
+          const { data } = await api.post('/auth/google', { [kind]: token });
+          api.defaults.headers.common['Authorization'] = `Bearer ${data.data.accessToken}`;
+          setRefreshToken(data.data.refreshToken);
+          set({ user: data.data.user, accessToken: data.data.accessToken, isLoading: false });
+          return { isNew: !!data.data.isNew, needsPhone: !!data.data.needsPhone };
+        } catch (err) {
+          set({ isLoading: false });
+          throw err;
+        }
+      },
+
+      signInWithBiometric: async (assertion) => {
+        set({ isLoading: true });
+        try {
+          const { data } = await api.post('/auth/webauthn/login-verify', { assertionResponse: assertion });
           api.defaults.headers.common['Authorization'] = `Bearer ${data.data.accessToken}`;
           setRefreshToken(data.data.refreshToken);
           set({ user: data.data.user, accessToken: data.data.accessToken, isLoading: false });

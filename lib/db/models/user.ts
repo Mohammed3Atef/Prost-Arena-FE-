@@ -23,6 +23,16 @@ export interface IUserAddress {
   createdAt?: Date;
 }
 
+export interface IWebAuthnCredential {
+  _id?:         Types.ObjectId;
+  credentialID: string;     // base64url
+  publicKey:    string;     // base64url
+  counter:      number;
+  transports:   string[];
+  label:        string;
+  createdAt?:   Date;
+}
+
 export interface IUser extends Document {
   _id: Types.ObjectId;
   name?: string;
@@ -37,6 +47,8 @@ export interface IUser extends Document {
   isEmailVerified: boolean;
   emailVerifyToken?: string;
   provider: 'local' | 'google' | 'facebook';
+  googleId?: string | null;
+  webauthnCredentials: IWebAuthnCredential[];
   role: 'user' | 'admin' | 'superadmin';
   xp: number;
   level: number;
@@ -68,6 +80,14 @@ const BadgeSchema = new Schema<IBadge>({
   earnedAt: { type: Date, default: Date.now },
 }, { _id: false });
 
+const WebAuthnCredentialSchema = new Schema<IWebAuthnCredential>({
+  credentialID: { type: String, required: true, index: true },
+  publicKey:    { type: String, required: true },
+  counter:      { type: Number, default: 0 },
+  transports:   { type: [String], default: [] },
+  label:        { type: String, default: 'Device' },
+}, { _id: true, timestamps: { createdAt: true, updatedAt: false } });
+
 const UserAddressSchema = new Schema<IUserAddress>({
   label:    { type: String, required: true, default: 'Home' },
   street:   { type: String, required: true },
@@ -97,6 +117,8 @@ const UserSchema = new Schema<IUser>({
   isEmailVerified: { type: Boolean, default: false },
   emailVerifyToken: { type: String, select: false },
   provider: { type: String, enum: ['local', 'google', 'facebook'], default: 'local' },
+  googleId: { type: String, default: null, sparse: true, unique: true },
+  webauthnCredentials: { type: [WebAuthnCredentialSchema], default: [] },
 
   role: { type: String, enum: ['user', 'admin', 'superadmin'], default: 'user' },
 
@@ -168,6 +190,16 @@ function calculateLevelFromXp(xp: number, coeff: number = 100) {
   let level = 1;
   while (calculateXpForLevel(level + 1, coeff) <= xp) level++;
   return level;
+}
+
+// HMR-safe registration. Next dev hot-reloads can leave a cached model with
+// an outdated schema; force re-register if expected new paths are missing.
+const EXPECTED_USER_PATHS = ['googleId', 'webauthnCredentials', 'addresses'];
+if (mongoose.models.User) {
+  const existing = Object.keys(mongoose.models.User.schema.paths);
+  if (EXPECTED_USER_PATHS.some((p) => !existing.includes(p))) {
+    mongoose.deleteModel('User');
+  }
 }
 
 export const User: Model<IUser> =

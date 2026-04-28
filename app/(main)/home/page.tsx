@@ -94,7 +94,7 @@ export default function HomePage() {
                 </div>
                 <div>
                   <p className="font-semibold">{user.name}</p>
-                  <p className="text-xs text-gray-400">{user.points.toLocaleString()} points</p>
+                  <p className="text-xs text-gray-400">{user.points.toLocaleString()} {t('common.points')}</p>
                 </div>
               </div>
               <XpBar xp={user.xp} />

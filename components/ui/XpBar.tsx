@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { cn, xpProgress } from '../../lib/utils';
 import { useSiteSettings } from '../layout/SiteSettingsProvider';
+import { useLocale } from '../layout/LocaleProvider';
 
 interface XpBarProps {
   xp:        number;
@@ -13,6 +14,7 @@ interface XpBarProps {
 
 export default function XpBar({ xp, className, showLabel = true, compact = false }: XpBarProps) {
   const { settings } = useSiteSettings();
+  const { t } = useLocale();
   const { level, progress, required, percentage } = xpProgress(xp, settings.xpPerLevelCoeff ?? 100);
 
   return (
@@ -20,10 +22,10 @@ export default function XpBar({ xp, className, showLabel = true, compact = false
       {showLabel && (
         <div className="flex items-center justify-between mb-1.5">
           <span className={cn('font-display font-bold text-brand-500', compact ? 'text-xs' : 'text-sm')}>
-            LVL {level}
+            {t('common.lvl')} {level}
           </span>
           <span className={cn('text-gray-400 dark:text-gray-500', compact ? 'text-xs' : 'text-xs')}>
-            {progress.toLocaleString()} / {required.toLocaleString()} XP
+            {progress.toLocaleString()} / {required.toLocaleString()} {t('common.xp')}
           </span>
         </div>
       )}

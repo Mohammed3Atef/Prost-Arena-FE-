@@ -14,7 +14,10 @@
     "search": "Search",
     "language": "Language",
     "english": "English",
-    "arabic": "العربية"
+    "arabic": "العربية",
+    "lvl": "LVL",
+    "xp": "XP",
+    "points": "points"
   },
   "nav": {
     "home": "Home",
@@ -158,7 +161,11 @@
     "referralPlaceholder": "Friend's referral code",
     "codeSentTo": "Code sent to",
     "haveAccount": "Already have an account?",
-    "signInLink": "Sign in"
+    "signInLink": "Sign in",
+    "orContinueWith": "or continue with email",
+    "signInWithBiometric": "Sign in with Face ID / fingerprint",
+    "biometricFailed": "Biometric sign-in failed",
+    "googleNotConfigured": "Google sign-in is not configured"
   },
   "menu": {
     "title": "Our Menu",

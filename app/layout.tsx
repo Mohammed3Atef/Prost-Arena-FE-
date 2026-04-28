@@ -7,6 +7,7 @@ import PWARegister from '../components/layout/PWARegister';
 import { SiteSettingsProvider } from '../components/layout/SiteSettingsProvider';
 import { LocaleProvider } from '../components/layout/LocaleProvider';
 import { CartProvider } from '../hooks/useCart';
+import ProstGoogleAuthProvider from '../components/auth/GoogleAuthProvider';
 import { loadServerSettings, buildThemeCssVars } from '../lib/server/settings';
 import { cookies } from 'next/headers';
 import { DEFAULT_LOCALE, LOCALE_COOKIE, LOCALE_DIR, isLocale, type Locale } from '../lib/i18n/config';
@@ -105,6 +106,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <ThemeProvider>
               <ConfirmProvider>
                 <CartProvider>
+                <ProstGoogleAuthProvider>
                   {children}
                   <PWARegister />
                   <Toaster
@@ -114,6 +116,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                       style: { borderRadius: '0.75rem', fontFamily: 'var(--font-inter)' },
                     }}
                   />
+                </ProstGoogleAuthProvider>
                 </CartProvider>
               </ConfirmProvider>
             </ThemeProvider>

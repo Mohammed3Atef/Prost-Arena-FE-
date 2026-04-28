@@ -15,7 +15,10 @@
     "search": "بحث",
     "language": "اللغة",
     "english": "English",
-    "arabic": "العربية"
+    "arabic": "العربية",
+    "lvl": "المستوى",
+    "xp": "خبرة",
+    "points": "نقطة"
   },
   "nav": {
     "home": "الرئيسية",
@@ -159,7 +162,11 @@
     "referralPlaceholder": "رمز إحالة صديقك",
     "codeSentTo": "تم إرسال الرمز إلى",
     "haveAccount": "لديك حساب بالفعل؟",
-    "signInLink": "تسجيل الدخول"
+    "signInLink": "تسجيل الدخول",
+    "orContinueWith": "أو متابعة بالبريد الإلكتروني",
+    "signInWithBiometric": "الدخول بالبصمة أو Face ID",
+    "biometricFailed": "فشل الدخول بالبصمة",
+    "googleNotConfigured": "تسجيل الدخول بجوجل غير مفعَّل"
   },
   "menu": {
     "title": "قائمتنا",
