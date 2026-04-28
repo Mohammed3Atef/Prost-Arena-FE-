@@ -31,10 +31,12 @@ export function formatNumber(n: number): string {
 /** XP progress within a level. Coefficient is admin-configurable (default 100). */
 export function xpProgress(xp: number, coeff: number = 100) {
   const level      = levelFromXp(xp, coeff);
-  const levelStart = xpForLevel(level, coeff);
+  // Level 1 starts at 0 XP (the user begins there). Higher levels start at the
+  // threshold to enter that level, given by xpForLevel(level).
+  const levelStart = level <= 1 ? 0 : xpForLevel(level, coeff);
   const levelEnd   = xpForLevel(level + 1, coeff);
   const progress   = xp - levelStart;
-  const required   = levelEnd - levelStart;
+  const required   = Math.max(1, levelEnd - levelStart);
   return { level, progress, required, percentage: Math.min(100, Math.floor((progress / required) * 100)) };
 }
 

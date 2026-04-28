@@ -5,7 +5,7 @@ import { dbConnect } from '@/lib/db/mongoose';
 import { handleError } from '@/lib/server/error';
 import { requireAuth } from '@/lib/server/permissions';
 import { generateRegistrationOptions } from '@simplewebauthn/server';
-import { RP_ID, RP_NAME, signChallenge, challengeCookieName, challengeCookieOptions } from '@/lib/server/webauthn';
+import { rpIdFromRequest, RP_NAME, signChallenge, challengeCookieName, challengeCookieOptions } from '@/lib/server/webauthn';
 import { User } from '@/lib/db/models/user';
 
 export const dynamic = 'force-dynamic';
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
 
     const options = await generateRegistrationOptions({
       rpName: RP_NAME,
-      rpID:   RP_ID,
+      rpID:   rpIdFromRequest(req),
       userID: new TextEncoder().encode(String(user._id)),
       userName: user.email || user.name || `user-${user._id}`,
       userDisplayName: user.name || user.email || 'Prost Arena user',

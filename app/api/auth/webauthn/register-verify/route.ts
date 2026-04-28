@@ -5,7 +5,7 @@ import { dbConnect } from '@/lib/db/mongoose';
 import { handleError, operationalError } from '@/lib/server/error';
 import { requireAuth } from '@/lib/server/permissions';
 import { verifyRegistrationResponse } from '@simplewebauthn/server';
-import { RP_ID, RP_ORIGIN, verifyChallenge, challengeCookieName } from '@/lib/server/webauthn';
+import { rpIdFromRequest, originFromRequest, verifyChallenge, challengeCookieName } from '@/lib/server/webauthn';
 import { User } from '@/lib/db/models/user';
 
 export const dynamic = 'force-dynamic';
@@ -34,8 +34,8 @@ export async function POST(req: NextRequest) {
     const verification = await verifyRegistrationResponse({
       response:                attestationResponse,
       expectedChallenge:       payload.challenge,
-      expectedOrigin:          RP_ORIGIN,
-      expectedRPID:            RP_ID,
+      expectedOrigin:          originFromRequest(req),
+      expectedRPID:            rpIdFromRequest(req),
       requireUserVerification: false,
     });
 

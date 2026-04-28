@@ -19,10 +19,11 @@ export function xpToNextLevel(xp: number, coeff: number = 100): number {
 
 export function xpProgressInLevel(xp: number, coeff: number = 100) {
   const level = levelFromXp(xp, coeff);
-  const levelStart = xpForLevel(level, coeff);
+  // Level 1 baseline is 0 XP; higher levels begin at xpForLevel(level).
+  const levelStart = level <= 1 ? 0 : xpForLevel(level, coeff);
   const levelEnd = xpForLevel(level + 1, coeff);
   const progress = xp - levelStart;
-  const required = levelEnd - levelStart;
+  const required = Math.max(1, levelEnd - levelStart);
   return { level, progress, required, percentage: Math.floor((progress / required) * 100) };
 }
 

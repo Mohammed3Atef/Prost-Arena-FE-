@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/db/mongoose';
 import { handleError } from '@/lib/server/error';
 import { generateAuthenticationOptions } from '@simplewebauthn/server';
-import { RP_ID, signChallenge, challengeCookieName, challengeCookieOptions } from '@/lib/server/webauthn';
+import { rpIdFromRequest, signChallenge, challengeCookieName, challengeCookieOptions } from '@/lib/server/webauthn';
 import { User } from '@/lib/db/models/user';
 
 export const dynamic = 'force-dynamic';
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     }
 
     const options = await generateAuthenticationOptions({
-      rpID:             RP_ID,
+      rpID:             rpIdFromRequest(req),
       userVerification: 'preferred',
       allowCredentials,
     });

@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/db/mongoose';
 import { handleError, operationalError } from '@/lib/server/error';
 import { verifyAuthenticationResponse } from '@simplewebauthn/server';
-import { RP_ID, RP_ORIGIN, verifyChallenge, challengeCookieName } from '@/lib/server/webauthn';
+import { rpIdFromRequest, originFromRequest, verifyChallenge, challengeCookieName } from '@/lib/server/webauthn';
 import { User } from '@/lib/db/models/user';
 import { issueTokens } from '@/lib/server/auth';
 
@@ -45,8 +45,8 @@ export async function POST(req: NextRequest) {
     const verification = await verifyAuthenticationResponse({
       response: assertionResponse,
       expectedChallenge: payload.challenge,
-      expectedOrigin:    RP_ORIGIN,
-      expectedRPID:      RP_ID,
+      expectedOrigin:    originFromRequest(req),
+      expectedRPID:      rpIdFromRequest(req),
       credential: {
         id:        cred.credentialID,
         publicKey: new Uint8Array(Buffer.from(cred.publicKey, 'base64url')),
