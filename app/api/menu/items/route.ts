@@ -16,8 +16,8 @@ function escapeRegex(s: string) {
 export async function GET(req: NextRequest) {
   try {
     await dbConnect();
-    const user = await optionalAuth(req);
-    const userLevel = user?.level ?? 1;
+    // optionalAuth kept for any future per-user logic (still tells us who's viewing).
+    await optionalAuth(req);
 
     const sp = req.nextUrl.searchParams;
     const category = sp.get('category');
@@ -25,13 +25,11 @@ export async function GET(req: NextRequest) {
     const page = parseInt(sp.get('page') || '1', 10);
     const limit = Math.min(parseInt(sp.get('limit') || '40', 10), 100);
 
+    // Secret items are returned even if the user can't unlock them yet — the
+    // client shows them blurred and disabled to motivate level-up.
     const filter: any = { isAvailable: true };
     if (category) filter.category = category;
     if (search) filter.name = { $regex: escapeRegex(search), $options: 'i' };
-    filter.$or = [
-      { isSecret: false },
-      { isSecret: true, requiredLevel: { $lte: userLevel } },
-    ];
 
     const skip = (page - 1) * limit;
     const [items, total] = await Promise.all([

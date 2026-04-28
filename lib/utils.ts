@@ -6,9 +6,19 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/** Format currency */
-export function formatCurrency(amount: number, currency = 'USD') {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
+/**
+ * Format an amount as Egyptian Pounds (EGP).
+ * Pass `locale` to control formatting:
+ *   - 'en' → "EGP 110.00"
+ *   - 'ar' → "١١٠٫٠٠ ج.م.‏" (Arabic-Egypt locale formatting)
+ */
+export function formatCurrency(amount: number, locale: 'en' | 'ar' = 'en') {
+  const tag = locale === 'ar' ? 'ar-EG' : 'en-EG';
+  try {
+    return new Intl.NumberFormat(tag, { style: 'currency', currency: 'EGP' }).format(amount);
+  } catch {
+    return `EGP ${amount.toFixed(2)}`;
+  }
 }
 
 /** Format large numbers (1200 → 1.2k) */
@@ -18,20 +28,20 @@ export function formatNumber(n: number): string {
   return n.toString();
 }
 
-/** XP progress within a level */
-export function xpProgress(xp: number) {
-  const level     = levelFromXp(xp);
-  const levelStart = xpForLevel(level);
-  const levelEnd   = xpForLevel(level + 1);
+/** XP progress within a level. Coefficient is admin-configurable (default 100). */
+export function xpProgress(xp: number, coeff: number = 100) {
+  const level      = levelFromXp(xp, coeff);
+  const levelStart = xpForLevel(level, coeff);
+  const levelEnd   = xpForLevel(level + 1, coeff);
   const progress   = xp - levelStart;
   const required   = levelEnd - levelStart;
   return { level, progress, required, percentage: Math.min(100, Math.floor((progress / required) * 100)) };
 }
 
-function xpForLevel(level: number) { return level * level * 100; }
-function levelFromXp(xp: number) {
+function xpForLevel(level: number, coeff: number = 100) { return level * level * coeff; }
+function levelFromXp(xp: number, coeff: number = 100) {
   let l = 1;
-  while (xpForLevel(l + 1) <= xp) l++;
+  while (xpForLevel(l + 1, coeff) <= xp) l++;
   return l;
 }
 

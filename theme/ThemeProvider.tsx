@@ -23,7 +23,17 @@ const ThemeContext = createContext<ThemeContextValue>({
   toggleTheme:   () => {},
 });
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
+export function ThemeProvider({
+  children,
+  storageKey = 'pa-theme',
+}: {
+  children: ReactNode;
+  /**
+   * localStorage key for this theme scope. Pass a different key (e.g. 'pa-theme-admin')
+   * to give a sub-tree (like /admin) its own independent dark/light preference.
+   */
+  storageKey?: string;
+}) {
   const [theme, setThemeState] = useState<Theme>('system');
 
   // Resolved = what is actually shown (light | dark).
@@ -32,9 +42,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   // Initialise from localStorage on mount
   useEffect(() => {
-    const stored = (localStorage.getItem('pa-theme') as Theme) || 'system';
+    const stored = (localStorage.getItem(storageKey) as Theme) || 'system';
     setThemeState(stored);
-  }, []);
+  }, [storageKey]);
 
   // Apply theme to <html> whenever it changes
   useEffect(() => {
@@ -60,7 +70,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const setTheme = (t: Theme) => {
     setThemeState(t);
-    localStorage.setItem('pa-theme', t);
+    localStorage.setItem(storageKey, t);
   };
 
   const toggleTheme = () => {

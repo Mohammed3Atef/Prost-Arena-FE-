@@ -7,6 +7,7 @@ import api from '../../../services/api/client';
 import { cn } from '../../../lib/utils';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../../store/useAuthStore';
+import { useConfirm } from '../../../components/ui/ConfirmProvider';
 
 interface User {
   _id: string; name: string; email: string; role: string;
@@ -31,6 +32,7 @@ export default function AdminUsersPage() {
   const [selected,   setSelected]   = useState<User | null>(null);
   const [saving,     setSaving]     = useState(false);
   const [spinCount,  setSpinCount]  = useState(1);
+  const confirm = useConfirm();
   const LIMIT = 20;
 
   const load = useCallback(async () => {
@@ -85,7 +87,13 @@ export default function AdminUsersPage() {
   };
 
   const deleteUser = async (userId: string) => {
-    if (!confirm('Permanently delete this user? This cannot be undone.')) return;
+    const ok = await confirm({
+      title: 'Delete user permanently?',
+      description: 'All of this user’s orders, XP and rewards will remain orphaned in the database. This cannot be undone.',
+      confirmLabel: 'Delete user',
+      tone: 'danger',
+    });
+    if (!ok) return;
     try {
       await api.delete(`/users/${userId}`);
       setUsers((p) => p.filter((u) => u._id !== userId));

@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { cn, xpProgress } from '../../lib/utils';
+import { useSiteSettings } from '../layout/SiteSettingsProvider';
 
 interface XpBarProps {
   xp:        number;
@@ -11,7 +12,8 @@ interface XpBarProps {
 }
 
 export default function XpBar({ xp, className, showLabel = true, compact = false }: XpBarProps) {
-  const { level, progress, required, percentage } = xpProgress(xp);
+  const { settings } = useSiteSettings();
+  const { level, progress, required, percentage } = xpProgress(xp, settings.xpPerLevelCoeff ?? 100);
 
   return (
     <div className={cn('w-full', className)}>

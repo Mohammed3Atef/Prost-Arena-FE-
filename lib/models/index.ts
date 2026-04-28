@@ -32,6 +32,8 @@ import '@/lib/db/models/userReward';
 import '@/lib/db/models/spinWheel';    // exports SpinWheelConfig + SpinLog
 import '@/lib/db/models/referral';
 import '@/lib/db/models/otpCode';
+import '@/lib/db/models/siteSettings';
+import '@/lib/db/models/cart';
 
 // Re-export the concrete models so callers can do
 //   import { User, MenuItem } from '@/lib/models';
@@ -49,3 +51,5 @@ export { UserReward } from '@/lib/db/models/userReward';
 export { SpinWheelConfig, SpinLog } from '@/lib/db/models/spinWheel';
 export { Referral } from '@/lib/db/models/referral';
 export { OtpCode } from '@/lib/db/models/otpCode';
+export { SiteSettings, getSiteSettings } from '@/lib/db/models/siteSettings';
+export { Cart, lineIdFor } from '@/lib/db/models/cart';

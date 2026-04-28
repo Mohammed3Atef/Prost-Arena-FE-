@@ -6,6 +6,7 @@ import { Plus, Edit2, Trash2, X, ToggleLeft, ToggleRight } from 'lucide-react';
 import api from '../../../services/api/client';
 import { cn } from '../../../lib/utils';
 import toast from 'react-hot-toast';
+import { useConfirm } from '../../../components/ui/ConfirmProvider';
 
 interface Mission {
   _id: string; title: string; description: string; icon: string | null;
@@ -26,6 +27,7 @@ export default function AdminMissionsPage() {
   const [editM,    setEditM]    = useState<Mission | null>(null);
   const [form,     setForm]     = useState(EMPTY_FORM);
   const [saving,   setSaving]   = useState(false);
+  const confirm = useConfirm();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -73,7 +75,13 @@ export default function AdminMissionsPage() {
   };
 
   const del = async (id: string) => {
-    if (!confirm('Delete this mission?')) return;
+    const ok = await confirm({
+      title: 'Delete mission?',
+      description: 'The mission will be deactivated and disappear from users’ lists.',
+      confirmLabel: 'Delete',
+      tone: 'danger',
+    });
+    if (!ok) return;
     try { await api.put(`/missions/${id}`, { isActive: false }); setMissions((p) => p.filter((m) => m._id !== id)); toast.success('Mission deactivated'); }
     catch { toast.error('Failed'); }
   };

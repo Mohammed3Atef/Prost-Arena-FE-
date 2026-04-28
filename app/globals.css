@@ -2,6 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Default theme color variables (overridden at runtime from SiteSettings) ── */
+:root {
+  --brand-50:  255 245 237;
+  --brand-100: 255 230 204;
+  --brand-200: 255 204 153;
+  --brand-300: 255 168  85;
+  --brand-400: 255 124  31;
+  --brand-500: 255 107  53;
+  --brand-600: 229  90  43;
+  --brand-700: 196  74  33;
+  --brand-800: 158  58  26;
+  --brand-900: 122  45  20;
+
+  --gold-50:  255 251 235;
+  --gold-100: 254 243 199;
+  --gold-200: 253 230 138;
+  --gold-300: 252 211  77;
+  --gold-400: 251 191  36;
+  --gold-500: 245 158  11;
+  --gold-600: 217 119   6;
+  --gold-700: 180  83   9;
+  --gold-800: 146  64  14;
+  --gold-900: 120  53  15;
+}
+
 /* ── Base resets ────────────────────────────────────────────────────────── */
 @layer base {
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -130,10 +155,10 @@
   }
 
   .glow-brand {
-    box-shadow: 0 0 20px rgba(255, 107, 53, 0.4);
+    box-shadow: 0 0 20px rgb(var(--brand-500) / 0.4);
   }
 
   .glow-gold {
-    box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+    box-shadow: 0 0 20px rgb(var(--gold-500) / 0.4);
   }
 }

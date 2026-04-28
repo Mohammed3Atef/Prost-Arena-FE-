@@ -6,6 +6,7 @@ import { Plus, Edit2, Trash2, X, ToggleLeft, ToggleRight } from 'lucide-react';
 import api from '../../../services/api/client';
 import { cn } from '../../../lib/utils';
 import toast from 'react-hot-toast';
+import { useConfirm } from '../../../components/ui/ConfirmProvider';
 
 interface Reward {
   _id: string; name: string; description: string;
@@ -51,6 +52,7 @@ export default function AdminRewardsPage() {
   const [form,       setForm]       = useState(EMPTY_FORM);
   const [saving,     setSaving]     = useState(false);
   const [typeFilter, setTypeFilter] = useState('');
+  const confirm = useConfirm();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -122,7 +124,13 @@ export default function AdminRewardsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this reward?')) return;
+    const ok = await confirm({
+      title: 'Delete reward?',
+      description: 'Users who already redeemed this reward keep it; new redemptions will be blocked.',
+      confirmLabel: 'Delete',
+      tone: 'danger',
+    });
+    if (!ok) return;
     try {
       await api.delete(`/rewards/${id}`);
       setRewards((p) => p.filter((r) => r._id !== id));

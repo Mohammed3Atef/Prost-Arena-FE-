@@ -10,33 +10,33 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // ── Brand palette ──────────────────────────────────────────
+        // ── Brand palette (CSS-var driven; runtime themeable from admin) ──
         brand: {
-          50:  '#fff5ed',
-          100: '#ffe6cc',
-          200: '#ffcc99',
-          300: '#ffa855',
-          400: '#ff7c1f',
-          500: '#ff6b35', // primary
-          600: '#e55a2b',
-          700: '#c44a21',
-          800: '#9e3a1a',
-          900: '#7a2d14',
+          50:  'rgb(var(--brand-50)  / <alpha-value>)',
+          100: 'rgb(var(--brand-100) / <alpha-value>)',
+          200: 'rgb(var(--brand-200) / <alpha-value>)',
+          300: 'rgb(var(--brand-300) / <alpha-value>)',
+          400: 'rgb(var(--brand-400) / <alpha-value>)',
+          500: 'rgb(var(--brand-500) / <alpha-value>)',
+          600: 'rgb(var(--brand-600) / <alpha-value>)',
+          700: 'rgb(var(--brand-700) / <alpha-value>)',
+          800: 'rgb(var(--brand-800) / <alpha-value>)',
+          900: 'rgb(var(--brand-900) / <alpha-value>)',
         },
-        // ── Gold (XP / rewards) ────────────────────────────────────
+        // ── Gold (XP / rewards; CSS-var driven) ─────────────────────
         gold: {
-          50:  '#fffbeb',
-          100: '#fef3c7',
-          200: '#fde68a',
-          300: '#fcd34d',
-          400: '#fbbf24',
-          500: '#f59e0b',
-          600: '#d97706',
-          700: '#b45309',
-          800: '#92400e',
-          900: '#78350f',
+          50:  'rgb(var(--gold-50)  / <alpha-value>)',
+          100: 'rgb(var(--gold-100) / <alpha-value>)',
+          200: 'rgb(var(--gold-200) / <alpha-value>)',
+          300: 'rgb(var(--gold-300) / <alpha-value>)',
+          400: 'rgb(var(--gold-400) / <alpha-value>)',
+          500: 'rgb(var(--gold-500) / <alpha-value>)',
+          600: 'rgb(var(--gold-600) / <alpha-value>)',
+          700: 'rgb(var(--gold-700) / <alpha-value>)',
+          800: 'rgb(var(--gold-800) / <alpha-value>)',
+          900: 'rgb(var(--gold-900) / <alpha-value>)',
         },
-        // ── Arena (dark UI accent) ─────────────────────────────────
+        // ── Arena (dark UI accent; static palette) ──────────────────
         arena: {
           900: '#0f0f1a',
           800: '#1a1a2e',

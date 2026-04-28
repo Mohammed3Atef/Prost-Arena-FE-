@@ -10,6 +10,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '../../lib/utils';
+import { useLocale } from '../layout/LocaleProvider';
 
 interface Segment {
   label: string;
@@ -34,6 +35,7 @@ const COLORS = [
 export default function SpinWheelCanvas({
   segments, onSpin, onComplete, disabled, className,
 }: SpinWheelCanvasProps) {
+  const { t } = useLocale();
   const canvasRef    = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [spinning, setSpinning] = useState(false);
@@ -201,12 +203,12 @@ export default function SpinWheelCanvas({
             <motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
               🎰
             </motion.span>
-            Spinning…
+            {t('spin.spinning')}
           </span>
         ) : disabled ? (
-          '⏳ Come back later'
+          t('spin.comeBackLater')
         ) : (
-          '🎡 SPIN!'
+          t('spin.spinCta')
         )}
       </motion.button>
     </div>

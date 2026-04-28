@@ -4,11 +4,15 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Utensils, Trophy, Gift, Users,
-  BarChart3, Layers, ShoppingBag, Target, Menu, X,
+  BarChart3, Layers, ShoppingBag, Target, Menu, X, Settings, LogOut,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useEffect, useState } from 'react';
 import { cn } from '../../lib/utils';
+import { LocaleProvider } from '../../components/layout/LocaleProvider';
+import { LOCALE_COOKIE, LOCALE_DIR, isLocale, DEFAULT_LOCALE } from '../../lib/i18n/config';
+import { ThemeProvider } from '../../theme/ThemeProvider';
+import ThemeToggle from '../../components/ui/ThemeToggle';
 
 const LINKS = [
   { href: '/admin',            label: 'Dashboard',  icon: LayoutDashboard },
@@ -20,21 +24,54 @@ const LINKS = [
   { href: '/admin/spinwheel',  label: 'Spin Wheel', icon: Layers },
   { href: '/admin/users',      label: 'Users',      icon: Users },
   { href: '/admin/analytics',  label: 'Analytics',  icon: BarChart3 },
+  { href: '/admin/settings',   label: 'Settings',   icon: Settings },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname       = usePathname();
   const router         = useRouter();
-  const { user, isHydrated } = useAuthStore();
+  const { user, isHydrated, logout } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // The admin login page is itself rendered under this layout (it's a child
+  // of /admin), so don't redirect-loop on /admin/login.
+  const isLoginRoute = pathname === '/admin/login';
 
   useEffect(() => {
     if (!isHydrated) return;
-    if (!user) { router.push('/login?from=/admin'); return; }
-    if (!['admin', 'superadmin'].includes(user.role)) router.push('/home');
-  }, [user, isHydrated]);
+    if (isLoginRoute) return;
+    if (!user) { router.push('/admin/login'); return; }
+    if (!['admin', 'superadmin'].includes(user.role)) router.push('/admin/login?denied=1');
+  }, [user, isHydrated, isLoginRoute]);
 
   useEffect(() => { setSidebarOpen(false); }, [pathname]);
+
+  // Force LTR + English on admin regardless of user locale; restore on unmount.
+  useEffect(() => {
+    const html = document.documentElement;
+    html.lang = 'en';
+    html.dir  = 'ltr';
+    return () => {
+      const cookieLocale = document.cookie
+        .split('; ')
+        .find((c) => c.startsWith(`${LOCALE_COOKIE}=`))
+        ?.split('=')[1];
+      const next = isLocale(cookieLocale) ? cookieLocale : DEFAULT_LOCALE;
+      html.lang = next;
+      html.dir  = LOCALE_DIR[next];
+    };
+  }, []);
+
+  // Render the login page bare (no sidebar/header) under the admin theme scope.
+  if (isLoginRoute) {
+    return (
+      <ThemeProvider storageKey="pa-theme-admin">
+        <LocaleProvider initial="en">
+          {children}
+        </LocaleProvider>
+      </ThemeProvider>
+    );
+  }
 
   if (!isHydrated || !user || !['admin', 'superadmin'].includes(user.role)) return null;
 
@@ -57,6 +94,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   );
 
   return (
+    <ThemeProvider storageKey="pa-theme-admin">
+    <LocaleProvider initial="en">
     <div className="min-h-screen bg-gray-50 dark:bg-arena-900 flex">
       {/* Mobile overlay */}
       {sidebarOpen && (
@@ -91,8 +130,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm capitalize">
             {LINKS.find((l) => (l.href === '/admin' ? pathname === l.href : pathname.startsWith(l.href)))?.label ?? 'Admin'}
           </span>
-          <div className="ml-auto">
-            <Link href="/home" className="text-xs text-gray-400 hover:text-brand-500 transition-colors">← Back to site</Link>
+          <div className="ml-auto flex items-center gap-2">
+            <ThemeToggle compact />
+            <button
+              onClick={() => { logout(); router.push('/admin/login'); }}
+              className="btn-ghost p-2"
+              title="Log out"
+            >
+              <LogOut size={16} />
+            </button>
+            <Link href="/home" className="text-xs text-gray-400 hover:text-brand-500 transition-colors ml-2">← Back to site</Link>
           </div>
         </header>
         <main className="flex-1 p-4 sm:p-6 overflow-auto">
@@ -100,5 +147,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </main>
       </div>
     </div>
+    </LocaleProvider>
+    </ThemeProvider>
   );
 }

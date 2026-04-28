@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Plus, Trash2, Edit2 } from 'lucide-react';
 import api from '../../../services/api/client';
 import toast from 'react-hot-toast';
+import { useConfirm } from '../../../components/ui/ConfirmProvider';
 
 interface Question { _id?: string; text: string; options: string[]; correctIndex: number; }
 interface Challenge { _id: string; category: string; type: string; questions: Question[]; timeLimit: number; }
@@ -19,6 +20,7 @@ export default function AdminChallengesPage() {
   const [form,       setForm]       = useState({ category: 'general', type: 'daily', timeLimit: 30 });
   const [questions,  setQuestions]  = useState<Question[]>([{ ...EMPTY_Q }]);
   const [saving,     setSaving]     = useState(false);
+  const confirm = useConfirm();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -46,7 +48,13 @@ export default function AdminChallengesPage() {
   };
 
   const deleteChallenge = async (id: string) => {
-    if (!confirm('Delete this challenge?')) return;
+    const ok = await confirm({
+      title: 'Delete challenge?',
+      description: 'This will remove the challenge and its questions. This action cannot be undone.',
+      confirmLabel: 'Delete',
+      tone: 'danger',
+    });
+    if (!ok) return;
     try { await api.delete(`/challenges/${id}`); toast.success('Deleted'); load(); }
     catch { toast.error('Failed to delete'); }
   };

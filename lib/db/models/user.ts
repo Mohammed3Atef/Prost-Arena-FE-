@@ -9,6 +9,20 @@ export interface IBadge {
   earnedAt?: Date;
 }
 
+export interface IUserAddress {
+  _id?:      Types.ObjectId;
+  label:     string;       // "Home", "Work", etc.
+  street:    string;
+  building?: string;
+  apt?:      string;
+  city:      string;
+  zip?:      string;
+  notes?:    string;
+  coords?:   { lat: number; lng: number };
+  isDefault: boolean;
+  createdAt?: Date;
+}
+
 export interface IUser extends Document {
   _id: Types.ObjectId;
   name?: string;
@@ -39,10 +53,11 @@ export interface IUser extends Document {
   isActive: boolean;
   isBanned: boolean;
   banReason: string | null;
+  addresses: IUserAddress[];
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
-  addXp(amount: number): { didLevelUp: boolean; newLevel: number };
+  addXp(amount: number, coeff?: number): { didLevelUp: boolean; newLevel: number };
 }
 
 const BadgeSchema = new Schema<IBadge>({
@@ -52,6 +67,21 @@ const BadgeSchema = new Schema<IBadge>({
   icon: { type: String },
   earnedAt: { type: Date, default: Date.now },
 }, { _id: false });
+
+const UserAddressSchema = new Schema<IUserAddress>({
+  label:    { type: String, required: true, default: 'Home' },
+  street:   { type: String, required: true },
+  building: { type: String, default: '' },
+  apt:      { type: String, default: '' },
+  city:     { type: String, required: true },
+  zip:      { type: String, default: '' },
+  notes:    { type: String, default: '' },
+  coords: {
+    lat: { type: Number },
+    lng: { type: Number },
+  },
+  isDefault: { type: Boolean, default: false },
+}, { _id: true, timestamps: { createdAt: true, updatedAt: false } });
 
 const UserSchema = new Schema<IUser>({
   name: { type: String, trim: true },
@@ -87,6 +117,8 @@ const UserSchema = new Schema<IUser>({
   isActive: { type: Boolean, default: true },
   isBanned: { type: Boolean, default: false },
   banReason: { type: String, default: null },
+
+  addresses: { type: [UserAddressSchema], default: [] },
 }, {
   timestamps: true,
   toJSON: { virtuals: true },
@@ -120,21 +152,21 @@ UserSchema.methods.comparePassword = async function (candidatePassword: string) 
   return bcrypt.compare(candidatePassword, this.password!);
 };
 
-UserSchema.methods.addXp = function (amount: number) {
+UserSchema.methods.addXp = function (amount: number, coeff: number = 100) {
   this.xp += amount;
-  const newLevel = calculateLevelFromXp(this.xp);
+  const newLevel = calculateLevelFromXp(this.xp, coeff);
   const didLevelUp = newLevel > this.level;
   this.level = newLevel;
   return { didLevelUp, newLevel };
 };
 
-function calculateXpForLevel(level: number) {
-  return level * level * 100;
+function calculateXpForLevel(level: number, coeff: number = 100) {
+  return level * level * coeff;
 }
 
-function calculateLevelFromXp(xp: number) {
+function calculateLevelFromXp(xp: number, coeff: number = 100) {
   let level = 1;
-  while (calculateXpForLevel(level + 1) <= xp) level++;
+  while (calculateXpForLevel(level + 1, coeff) <= xp) level++;
   return level;
 }
 

@@ -8,6 +8,7 @@ import Link from 'next/link';
 import api from '../../../services/api/client';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { formatCurrency, cn } from '../../../lib/utils';
+import { useLocale } from '../../../components/layout/LocaleProvider';
 
 interface Order {
   _id: string; orderNumber: string; status: string;
@@ -15,19 +16,20 @@ interface Order {
   createdAt: string; xpEarned?: number;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  pending:    { label: 'Pending',    color: 'text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20',  icon: Clock },
-  confirmed:  { label: 'Confirmed',  color: 'text-blue-500 bg-blue-50 dark:bg-blue-900/20',        icon: CheckCircle },
-  preparing:  { label: 'Preparing',  color: 'text-brand-500 bg-brand-50 dark:bg-brand-900/20',     icon: ChefHat },
-  ready:      { label: 'Ready',      color: 'text-purple-500 bg-purple-50 dark:bg-purple-900/20',  icon: Package },
-  delivered:  { label: 'Delivered',  color: 'text-green-500 bg-green-50 dark:bg-green-900/20',     icon: CheckCircle },
-  cancelled:  { label: 'Cancelled',  color: 'text-red-500 bg-red-50 dark:bg-red-900/20',           icon: XCircle },
-  out_for_delivery: { label: 'On the way', color: 'text-teal-500 bg-teal-50 dark:bg-teal-900/20', icon: Truck },
+const STATUS_CONFIG: Record<string, { labelKey: string; color: string; icon: React.ElementType }> = {
+  pending:    { labelKey: 'profile.statusPending',    color: 'text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20',  icon: Clock },
+  confirmed:  { labelKey: 'profile.statusConfirmed',  color: 'text-blue-500 bg-blue-50 dark:bg-blue-900/20',        icon: CheckCircle },
+  preparing:  { labelKey: 'profile.statusPreparing',  color: 'text-brand-500 bg-brand-50 dark:bg-brand-900/20',     icon: ChefHat },
+  ready:      { labelKey: 'profile.statusReady',      color: 'text-purple-500 bg-purple-50 dark:bg-purple-900/20',  icon: Package },
+  delivered:  { labelKey: 'profile.statusDelivered',  color: 'text-green-500 bg-green-50 dark:bg-green-900/20',     icon: CheckCircle },
+  cancelled:  { labelKey: 'profile.statusCancelled',  color: 'text-red-500 bg-red-50 dark:bg-red-900/20',           icon: XCircle },
+  out_for_delivery: { labelKey: 'profile.statusOnTheWay', color: 'text-teal-500 bg-teal-50 dark:bg-teal-900/20', icon: Truck },
 };
 
 export default function OrdersPage() {
   const { user, isHydrated } = useAuthStore();
   const router               = useRouter();
+  const { t, locale } = useLocale();
   const [orders,  setOrders]  = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [page,    setPage]    = useState(1);
@@ -55,8 +57,8 @@ export default function OrdersPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <h1 className="section-title">My Orders</h1>
-        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Track and review all your orders</p>
+        <h1 className="section-title">{t('profile.ordersTitle')}</h1>
+        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{t('profile.ordersSubtitle')}</p>
       </div>
 
       {loading && page === 1 ? (
@@ -68,10 +70,10 @@ export default function OrdersPage() {
           className="card p-12 text-center space-y-4">
           <ShoppingBag size={48} className="mx-auto text-gray-300 dark:text-gray-600" />
           <div>
-            <p className="font-semibold text-gray-700 dark:text-gray-300">No orders yet</p>
-            <p className="text-sm text-gray-400 mt-1">Place your first order to earn XP!</p>
+            <p className="font-semibold text-gray-700 dark:text-gray-300">{t('profile.noOrdersHero')}</p>
+            <p className="text-sm text-gray-400 mt-1">{t('profile.placeFirstOrder')}</p>
           </div>
-          <Link href="/menu" className="btn-primary inline-flex">Browse Menu</Link>
+          <Link href="/menu" className="btn-primary inline-flex">{t('cart.browseMenu')}</Link>
         </motion.div>
       ) : (
         <div className="space-y-3">
@@ -88,7 +90,7 @@ export default function OrdersPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">#{order.orderNumber}</span>
-                      <span className={cn('text-xs font-medium px-2 py-0.5 rounded-full', cfg.color)}>{cfg.label}</span>
+                      <span className={cn('text-xs font-medium px-2 py-0.5 rounded-full', cfg.color)}>{t(cfg.labelKey)}</span>
                       {order.xpEarned && order.xpEarned > 0 && (
                         <span className="text-xs text-brand-500 font-medium">+{order.xpEarned} XP</span>
                       )}
@@ -98,9 +100,9 @@ export default function OrdersPage() {
                     </p>
                     <p className="text-xs text-gray-400 mt-0.5">{new Date(order.createdAt).toLocaleString()}</p>
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="font-bold text-sm text-gray-900 dark:text-gray-100">{formatCurrency(order.total)}</p>
-                    <ChevronRight size={16} className="ml-auto text-gray-400 group-hover:text-brand-500 transition-colors mt-1" />
+                  <div className="text-end shrink-0">
+                    <p className="font-bold text-sm text-gray-900 dark:text-gray-100">{formatCurrency(order.total, locale)}</p>
+                    <ChevronRight size={16} className="ms-auto text-gray-400 group-hover:text-brand-500 transition-colors mt-1 rtl:rotate-180" />
                   </div>
                 </Link>
               </motion.div>
@@ -109,7 +111,7 @@ export default function OrdersPage() {
           {hasMore && (
             <button onClick={() => setPage((p) => p + 1)} disabled={loading}
               className="w-full py-3 text-sm font-medium text-brand-500 hover:text-brand-600 transition-colors">
-              {loading ? 'Loading…' : 'Load more orders'}
+              {loading ? t('common.loading') : t('profile.loadMoreOrders')}
             </button>
           )}
         </div>

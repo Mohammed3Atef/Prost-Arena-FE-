@@ -12,10 +12,18 @@ export interface IAddOnGroup {
   options: IAddOnOption[];
 }
 
+export interface INutrition {
+  protein: number | null;
+  carbs:   number | null;
+  fat:     number | null;
+}
+
 export interface IMenuItem extends Document {
   name: string;
   description: string;
+  longDescription: string;
   image: string | null;
+  gallery: string[];
   price: number;
   category: Types.ObjectId;
   addOnGroups: IAddOnGroup[];
@@ -23,7 +31,9 @@ export interface IMenuItem extends Document {
   isSecret: boolean;
   requiredLevel: number;
   tags: string[];
+  ingredients: string[];
   calories: number | null;
+  nutrition: INutrition;
   isVegetarian: boolean;
   isVegan: boolean;
   isGlutenFree: boolean;
@@ -52,7 +62,9 @@ const AddOnGroupSchema = new Schema<IAddOnGroup>({
 const MenuItemSchema = new Schema<IMenuItem>({
   name: { type: String, required: true, trim: true },
   description: { type: String, default: '' },
+  longDescription: { type: String, default: '' },
   image: { type: String, default: null },
+  gallery: { type: [String], default: [] },
   price: { type: Number, required: true, min: 0 },
 
   category: {
@@ -68,7 +80,13 @@ const MenuItemSchema = new Schema<IMenuItem>({
   requiredLevel: { type: Number, default: 1 },
 
   tags: [{ type: String }],
+  ingredients: { type: [String], default: [] },
   calories: { type: Number, default: null },
+  nutrition: {
+    protein: { type: Number, default: null },
+    carbs:   { type: Number, default: null },
+    fat:     { type: Number, default: null },
+  },
   isVegetarian: { type: Boolean, default: false },
   isVegan: { type: Boolean, default: false },
   isGlutenFree: { type: Boolean, default: false },

@@ -7,6 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '../../../../services/api/client';
 import { formatCurrency, cn } from '../../../../lib/utils';
+import { useLocale } from '../../../../components/layout/LocaleProvider';
 
 interface OrderItem { name: string; quantity: number; price: number; subtotal: number; }
 interface Order {
@@ -33,6 +34,7 @@ const STEP_ORDER = STEPS.map((s) => s.key);
 export default function OrderDetailPage() {
   const { id }   = useParams<{ id: string }>();
   const router   = useRouter();
+  const { locale } = useLocale();
   const [order,   setOrder]   = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState('');
@@ -87,8 +89,8 @@ export default function OrderDetailPage() {
             <h1 className="text-xl font-display font-bold text-gray-900 dark:text-gray-100">Order #{order.orderNumber}</h1>
             <p className="text-sm text-gray-400 mt-0.5">{new Date(order.createdAt).toLocaleString()}</p>
           </div>
-          <div className="text-right">
-            <p className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">{formatCurrency(order.total)}</p>
+          <div className="text-end">
+            <p className="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">{formatCurrency(order.total, locale)}</p>
             {order.xpEarned > 0 && (
               <p className="text-sm text-brand-500 font-medium flex items-center gap-1 justify-end mt-0.5">
                 <Zap size={13} /> +{order.xpEarned} XP earned
@@ -104,8 +106,8 @@ export default function OrderDetailPage() {
           <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-5">Order Status</h2>
           <div className="relative">
             {/* Progress line */}
-            <div className="absolute top-5 left-5 right-5 h-0.5 bg-gray-100 dark:bg-arena-700" />
-            <div className="absolute top-5 left-5 h-0.5 bg-brand-500 transition-all duration-700"
+            <div className="absolute top-5 start-5 end-5 h-0.5 bg-gray-100 dark:bg-arena-700" />
+            <div className="absolute top-5 start-5 h-0.5 bg-brand-500 transition-all duration-700"
               style={{ width: `${Math.max(0, currentStep) / (STEPS.length - 1) * 100}%` }} />
             <div className="relative flex justify-between">
               {STEPS.map((step, i) => {
@@ -153,22 +155,22 @@ export default function OrderDetailPage() {
                 <span className="w-6 h-6 rounded-lg bg-brand-50 dark:bg-brand-900/20 text-brand-500 text-xs font-bold flex items-center justify-center shrink-0">{item.quantity}</span>
                 <span className="text-sm text-gray-800 dark:text-gray-200">{item.name}</span>
               </div>
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 shrink-0">{formatCurrency(item.subtotal)}</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 shrink-0">{formatCurrency(item.subtotal, locale)}</span>
             </div>
           ))}
         </div>
         <div className="mt-4 pt-4 border-t border-gray-100 dark:border-arena-700 space-y-2">
           <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
-            <span>Subtotal</span><span>{formatCurrency(order.subtotal)}</span>
+            <span>Subtotal</span><span>{formatCurrency(order.subtotal, locale)}</span>
           </div>
           {order.discount > 0 && (
-            <div className="flex justify-between text-sm text-green-600"><span>Discount</span><span>-{formatCurrency(order.discount)}</span></div>
+            <div className="flex justify-between text-sm text-green-600"><span>Discount</span><span>-{formatCurrency(order.discount, locale)}</span></div>
           )}
           <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
-            <span>Delivery</span><span>{formatCurrency(order.deliveryFee)}</span>
+            <span>Delivery</span><span>{formatCurrency(order.deliveryFee, locale)}</span>
           </div>
           <div className="flex justify-between font-bold text-gray-900 dark:text-gray-100 pt-1">
-            <span>Total</span><span>{formatCurrency(order.total)}</span>
+            <span>Total</span><span>{formatCurrency(order.total, locale)}</span>
           </div>
         </div>
       </motion.div>

@@ -6,6 +6,7 @@ import { Referral } from '@/lib/db/models/referral';
 import { Reward, type IReward } from '@/lib/db/models/reward';
 import { UserReward } from '@/lib/db/models/userReward';
 import { Mission, UserMission } from '@/lib/db/models/mission';
+import { getSiteSettings } from '@/lib/db/models/siteSettings';
 import { calcOrderXp, calcOrderPoints, XP_PER_REFERRAL } from '@/lib/server/gamification';
 import { operationalError } from '@/lib/server/error';
 import type { Types } from 'mongoose';
@@ -89,7 +90,8 @@ async function awardOrderRewards(order: IOrder, userId: string | Types.ObjectId)
   const xp = calcOrderXp({ total: order.total });
   const points = calcOrderPoints({ total: order.total });
 
-  const { didLevelUp, newLevel } = user.addXp(xp);
+  const settings = await getSiteSettings();
+  const { didLevelUp, newLevel } = user.addXp(xp, settings.xpPerLevelCoeff ?? 100);
   user.points += points;
   user.ordersCount += 1;
   user.lastLoginAt = user.lastLoginAt || new Date();

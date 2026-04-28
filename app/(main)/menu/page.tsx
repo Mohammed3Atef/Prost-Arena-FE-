@@ -6,6 +6,7 @@ import { Search } from 'lucide-react';
 import MenuItemCard from '../../../components/food/MenuItemCard';
 import api from '../../../services/api/client';
 import { cn } from '../../../lib/utils';
+import { useLocale } from '../../../components/layout/LocaleProvider';
 
 interface Category { _id: string; name: string; slug: string; icon: string | null; }
 interface MenuItem {
@@ -15,6 +16,7 @@ interface MenuItem {
 }
 
 export default function MenuPage() {
+  const { t } = useLocale();
   const [categories,      setCategories]      = useState<Category[]>([]);
   const [items,           setItems]           = useState<MenuItem[]>([]);
   const [activeCategory,  setActiveCategory]  = useState('all');
@@ -60,12 +62,12 @@ export default function MenuPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="section-title">Our Menu</h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Order to earn XP and unlock secret items</p>
+          <h1 className="section-title">{t('menu.title')}</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{t('menu.subtitle')}</p>
         </div>
         <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-          <input type="text" placeholder="Search menu…" value={search} onChange={(e) => setSearch(e.target.value)} className="input pl-10" />
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+          <input type="text" placeholder={t('menu.searchPlaceholder')} value={search} onChange={(e) => setSearch(e.target.value)} className="input ps-10" />
         </div>
       </div>
 
@@ -74,7 +76,7 @@ export default function MenuPage() {
         <button onClick={() => setActiveCategory('all')}
           className={cn('px-4 py-2 rounded-xl text-sm font-medium shrink-0 transition-all',
             activeCategory === 'all' ? 'bg-brand-500 text-white' : 'bg-gray-100 dark:bg-arena-700 text-gray-700 dark:text-gray-300')}>
-          All Items
+          {t('menu.allItems')}
         </button>
         {categories.map((c) => (
           <button key={c._id} onClick={() => setActiveCategory(c._id)}
@@ -99,7 +101,7 @@ export default function MenuPage() {
             {items.length === 0 ? (
               <div className="col-span-full text-center py-16 text-gray-400">
                 <div className="text-6xl mb-4">🍽️</div>
-                <p className="text-lg font-medium">No items found</p>
+                <p className="text-lg font-medium">{t('menu.noItems')}</p>
               </div>
             ) : (
               items.map((item, i) => (
@@ -117,7 +119,7 @@ export default function MenuPage() {
         <div className="text-center pt-4">
           <button onClick={loadMore} disabled={loadingMore}
             className="btn-primary px-8 py-3 disabled:opacity-50">
-            {loadingMore ? 'Loading…' : 'Load More'}
+            {loadingMore ? t('common.loading') : t('menu.loadMore')}
           </button>
         </div>
       )}

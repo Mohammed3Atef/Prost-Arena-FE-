@@ -2,25 +2,25 @@ import { randomBytes } from 'crypto';
 
 const REFERRAL_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
-export function xpForLevel(level: number): number {
-  return level * level * 100;
+export function xpForLevel(level: number, coeff: number = 100): number {
+  return level * level * coeff;
 }
 
-export function levelFromXp(xp: number): number {
+export function levelFromXp(xp: number, coeff: number = 100): number {
   let level = 1;
-  while (xpForLevel(level + 1) <= xp) level++;
+  while (xpForLevel(level + 1, coeff) <= xp) level++;
   return level;
 }
 
-export function xpToNextLevel(xp: number): number {
-  const current = levelFromXp(xp);
-  return xpForLevel(current + 1) - xp;
+export function xpToNextLevel(xp: number, coeff: number = 100): number {
+  const current = levelFromXp(xp, coeff);
+  return xpForLevel(current + 1, coeff) - xp;
 }
 
-export function xpProgressInLevel(xp: number) {
-  const level = levelFromXp(xp);
-  const levelStart = xpForLevel(level);
-  const levelEnd = xpForLevel(level + 1);
+export function xpProgressInLevel(xp: number, coeff: number = 100) {
+  const level = levelFromXp(xp, coeff);
+  const levelStart = xpForLevel(level, coeff);
+  const levelEnd = xpForLevel(level + 1, coeff);
   const progress = xp - levelStart;
   const required = levelEnd - levelStart;
   return { level, progress, required, percentage: Math.floor((progress / required) * 100) };

@@ -8,18 +8,22 @@ import api from '../../../services/api/client';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import ResultPopup from '../../../components/ui/ResultPopup';
+import { useLocale } from '../../../components/layout/LocaleProvider';
 
 export default function SpinPage() {
   const { user, refreshUser, isHydrated } = useAuthStore();
   const router  = useRouter();
+  const { t } = useLocale();
   const [wheel,  setWheel]  = useState<any>(null);
   const [avail,  setAvail]  = useState<{ canSpin: boolean; secondsLeft: number; bonusSpins: number } | null>(null);
   const [result, setResult] = useState<any>(null);
+  const [popupOpen, setPopupOpen] = useState(false);
 
   useEffect(() => {
     if (!isHydrated) return;
     if (!user) { router.push('/login'); return; }
-    api.get('/spin/wheel').then((r) => setWheel(r.data.data)).catch(() => toast.error('Could not load spin wheel'));
+    api.get('/spin/wheel').then((r) => setWheel(r.data.data)).catch(() => toast.error(t('spin.couldNotLoad')));
     api.get('/spin/available').then((r) => setAvail(r.data.data)).catch(() => setAvail({ canSpin: false, secondsLeft: 0, bonusSpins: 0 }));
   }, [isHydrated]);
 
@@ -29,7 +33,7 @@ export default function SpinPage() {
       const { data } = await api.post('/spin');
       return data.data;
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Spin failed — try again');
+      toast.error(err?.response?.data?.message || t('spin.spinFailed'));
       api.get('/spin/available').then((r) => setAvail(r.data.data)).catch(() => {});
       throw err;
     }
@@ -37,11 +41,7 @@ export default function SpinPage() {
 
   const handleComplete = (spinResult: any) => {
     setResult(spinResult);
-    if (spinResult?.segment?.type === 'empty') {
-      toast('Better luck next time! 🍀', { icon: '😔', duration: 4000 });
-    } else {
-      toast.success(`🎉 You won: ${spinResult?.segment?.label ?? 'a prize'}!`, { duration: 4000 });
-    }
+    setPopupOpen(true);
     api.get('/spin/available').then((r) => setAvail(r.data.data)).catch(() => {});
     refreshUser();
   };
@@ -51,13 +51,13 @@ export default function SpinPage() {
   return (
     <div className="max-w-lg mx-auto text-center space-y-8">
       <div>
-        <h1 className="section-title">Daily Spin Wheel</h1>
-        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">One free spin every 24 hours</p>
+        <h1 className="section-title">{t('spin.title')}</h1>
+        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{t('spin.subtitle')}</p>
         {avail && avail.bonusSpins > 0 && (
           <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
             className="inline-flex items-center gap-2 mt-3 px-4 py-2 rounded-full bg-brand-500/10 border border-brand-500/30 text-brand-600 dark:text-brand-400 text-sm font-semibold">
             <Zap size={15} className="text-brand-500" />
-            {avail.bonusSpins} bonus spin{avail.bonusSpins !== 1 ? 's' : ''} available!
+            {t(avail.bonusSpins !== 1 ? 'spin.bonusSpinsPlural' : 'spin.bonusSpins', { count: avail.bonusSpins })}
           </motion.div>
         )}
       </div>
@@ -80,25 +80,30 @@ export default function SpinPage() {
       {avail && !avail.canSpin && avail.secondsLeft > 0 && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           className="card p-4 text-sm text-gray-500 dark:text-gray-400">
-          Next spin available in <span className="font-semibold text-brand-500">{hoursLeft}h</span>
+          {t('spin.cooldown', { hours: hoursLeft })}
         </motion.div>
       )}
 
-      {/* Result card */}
-      {result && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          className="card p-6 space-y-3">
-          <p className="text-4xl">{result.segment?.type === 'empty' ? '😔' : '🎉'}</p>
-          <p className="text-lg font-bold text-gray-900 dark:text-white">
-            {result.segment?.type === 'empty' ? 'No prize this time' : `You won: ${result.segment?.label}`}
-          </p>
-          {result.reward && (
-            <p className="text-sm text-brand-500 font-semibold">
-              Reward added to your account!
-            </p>
-          )}
-        </motion.div>
-      )}
+      <ResultPopup
+        open={popupOpen}
+        onClose={() => setPopupOpen(false)}
+        tone={result?.segment?.type === 'empty' ? 'lose' : 'win'}
+        title={
+          result?.segment?.type === 'empty'
+            ? t('spin.noPrize')
+            : t('spin.youWon', { prize: result?.segment?.label ?? '' })
+        }
+        description={
+          result?.segment?.type === 'empty'
+            ? t('spin.noPrizeSub')
+            : result?.reward
+              ? t('spin.rewardAdded')
+              : t('spin.enjoy')
+        }
+        primaryLabel={result?.reward ? t('spin.viewMyRewards') : t('spin.awesome')}
+        onPrimary={() => { if (result?.reward) router.push('/profile'); }}
+        secondaryLabel={t('common.close')}
+      />
     </div>
   );
 }

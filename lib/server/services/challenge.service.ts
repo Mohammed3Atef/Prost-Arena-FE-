@@ -4,6 +4,7 @@ import { Challenge, type IChallenge } from '@/lib/db/models/challenge';
 import { Question } from '@/lib/db/models/question';
 import { User } from '@/lib/db/models/user';
 import { getConfig } from '@/lib/db/models/challengeConfig';
+import { getSiteSettings } from '@/lib/db/models/siteSettings';
 import { operationalError } from '@/lib/server/error';
 
 const ADMIN_QUESTIONS_FILTER = { isActive: true, createdBy: { $ne: null } };
@@ -71,6 +72,13 @@ export async function getDailyChallenge(
       throw operationalError('No questions available yet. Add questions from the admin dashboard first.', 404);
     }
 
+    const settings = await getSiteSettings();
+    const reward = {
+      xp:          settings.dailyChallengeReward?.xp          ?? 100,
+      points:      settings.dailyChallengeReward?.points      ?? 50,
+      discountPct: settings.dailyChallengeReward?.discountPct ?? 10,
+    };
+
     const doc = await Challenge.create({
       type: 'daily',
       category,
@@ -78,7 +86,7 @@ export async function getDailyChallenge(
       questions: questions.map((q) => q._id),
       status: 'active',
       expiresAt: new Date(new Date().setHours(23, 59, 59, 999)),
-      reward: { xp: 100, points: 50, discountPct: 10 },
+      reward,
     });
 
     challenge = await Challenge.findById(doc._id).populate('questions').lean();
