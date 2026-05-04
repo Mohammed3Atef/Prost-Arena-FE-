@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { usePathname } from 'next/navigation';
 import {
   DEFAULT_LOCALE,
   LOCALE_COOKIE,
@@ -43,11 +44,18 @@ export function LocaleProvider({
   children: ReactNode;
 }) {
   const [locale, setLocaleState] = useState<Locale>(initial);
+  const pathname = usePathname();
 
-  // Sync once on mount in case of client-only nav
+  // Admin is a separate platform — it always renders LTR/English regardless of
+  // what the customer-side locale is set to. The /admin layout has its own
+  // LocaleProvider with `initial="en"` and forces html attrs to en/ltr; here in
+  // the parent provider we yield to it instead of fighting back in this effect.
+  const isAdminRoute = !!pathname?.startsWith('/admin');
+
   useEffect(() => {
+    if (isAdminRoute) return;
     applyHtmlAttributes(locale);
-  }, [locale]);
+  }, [locale, isAdminRoute]);
 
   const setLocale = useCallback((next: Locale) => {
     if (!isLocale(next)) return;

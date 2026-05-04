@@ -10,6 +10,7 @@ import api from '../../../services/api/client';
 import { formatNumber } from '../../../lib/utils';
 import { useSiteSettings } from '../../../components/layout/SiteSettingsProvider';
 import { useLocale } from '../../../components/layout/LocaleProvider';
+import { pickLocalized } from '../../../lib/i18n/pickLocalized';
 
 const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.1 } } };
 const item    = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } } };
@@ -36,8 +37,14 @@ function renderHeroTitle(template: string) {
 export default function HomePage() {
   const user = useAuthStore((s) => s.user);
   const { settings } = useSiteSettings();
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const [platformStats, setPlatformStats] = useState<{ totalUsers: number; totalOrders: number; totalRewards: number } | null>(null);
+
+  const heroBadgeText    = pickLocalized(settings as any, locale, 'heroBadge');
+  const heroTitleText    = pickLocalized(settings as any, locale, 'heroTitle');
+  const heroSubtitleText = pickLocalized(settings as any, locale, 'heroSubtitle');
+  const primaryCtaLabel   = pickLocalized(settings.heroPrimaryCta as any,   locale, 'label');
+  const secondaryCtaLabel = pickLocalized(settings.heroSecondaryCta as any, locale, 'label');
 
   useEffect(() => {
     api.get('/admin/public-stats').then((r) => setPlatformStats(r.data.data)).catch(() => {});
@@ -62,26 +69,26 @@ export default function HomePage() {
             className="absolute -bottom-20 -right-20 w-72 h-72 bg-purple-500/20 rounded-full blur-3xl" />
         </div>
         <div className="relative z-10">
-          {settings.heroBadge && (
+          {heroBadgeText && (
             <motion.p initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-              className="inline-block badge-brand mb-4 text-sm">{settings.heroBadge}</motion.p>
+              className="inline-block badge-brand mb-4 text-sm">{heroBadgeText}</motion.p>
           )}
           <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
             className="font-display text-4xl sm:text-6xl font-black mb-4 leading-tight">
-            {renderHeroTitle(settings.heroTitle)}
+            {renderHeroTitle(heroTitleText)}
           </motion.h1>
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
             className="text-gray-300 text-lg max-w-xl mx-auto mb-8">
-            {settings.heroSubtitle}
+            {heroSubtitleText}
           </motion.p>
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
             className="flex flex-wrap items-center justify-center gap-4">
             <Link href={settings.heroPrimaryCta.href} className="btn-primary text-lg px-8 py-4">
-              {settings.heroPrimaryCta.label} <ArrowRight size={20} />
+              {primaryCtaLabel} <ArrowRight size={20} />
             </Link>
-            {!user && settings.heroSecondaryCta?.label && (
+            {!user && secondaryCtaLabel && (
               <Link href={settings.heroSecondaryCta.href} className="bg-white/10 hover:bg-white/20 border border-white/30 text-white font-semibold px-8 py-4 rounded-xl transition-all">
-                {settings.heroSecondaryCta.label}
+                {secondaryCtaLabel}
               </Link>
             )}
           </motion.div>
@@ -106,26 +113,31 @@ export default function HomePage() {
       {/* ── Promo banners (admin-controlled) ── */}
       {activeBanners.length > 0 && (
         <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {activeBanners.slice(0, 4).map((b) => (
-            <Link
-              key={String(b._id ?? b.title)}
-              href={b.ctaUrl || '#'}
-              className="card group relative overflow-hidden p-6 sm:p-8 flex items-center gap-4 hover:shadow-lg transition-shadow"
-            >
-              {b.image && (
-                <img src={b.image} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity" />
-              )}
-              <div className="relative z-10">
-                <h3 className="font-display font-bold text-lg text-gray-900 dark:text-gray-100">{b.title}</h3>
-                {b.subtitle && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{b.subtitle}</p>}
-                {b.ctaLabel && (
-                  <span className="inline-flex items-center gap-1 mt-3 text-sm font-semibold text-brand-500">
-                    {b.ctaLabel} <ArrowRight size={14} />
-                  </span>
+          {activeBanners.slice(0, 4).map((b) => {
+            const title    = pickLocalized(b as any, locale, 'title');
+            const subtitle = pickLocalized(b as any, locale, 'subtitle');
+            const ctaLabel = pickLocalized(b as any, locale, 'ctaLabel');
+            return (
+              <Link
+                key={String(b._id ?? title)}
+                href={b.ctaUrl || '#'}
+                className="card group relative overflow-hidden p-6 sm:p-8 flex items-center gap-4 hover:shadow-lg transition-shadow"
+              >
+                {b.image && (
+                  <img src={b.image} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity" />
                 )}
-              </div>
-            </Link>
-          ))}
+                <div className="relative z-10">
+                  <h3 className="font-display font-bold text-lg text-gray-900 dark:text-gray-100">{title}</h3>
+                  {subtitle && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{subtitle}</p>}
+                  {ctaLabel && (
+                    <span className="inline-flex items-center gap-1 mt-3 text-sm font-semibold text-brand-500">
+                      {ctaLabel} <ArrowRight size={14} />
+                    </span>
+                  )}
+                </div>
+              </Link>
+            );
+          })}
         </section>
       )}
 
@@ -134,17 +146,21 @@ export default function HomePage() {
         <h2 className="section-title text-center mb-8">{t('home.featuresTitle')}</h2>
         <motion.div variants={stagger} initial="hidden" whileInView="show" viewport={{ once: true }}
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {settings.featureCards.map((f) => (
-            <motion.div key={`${f.href}-${f.title}`} variants={item}>
-              <Link href={f.href} className="card flex flex-col items-center text-center p-6 gap-3 group hover:shadow-lg transition-shadow">
-                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${f.color} flex items-center justify-center text-2xl group-hover:scale-110 transition-transform`}>
-                  {f.icon}
-                </div>
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100">{f.title}</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{f.desc}</p>
-              </Link>
-            </motion.div>
-          ))}
+          {settings.featureCards.map((f) => {
+            const fTitle = pickLocalized(f as any, locale, 'title');
+            const fDesc  = pickLocalized(f as any, locale, 'desc');
+            return (
+              <motion.div key={`${f.href}-${fTitle}`} variants={item}>
+                <Link href={f.href} className="card flex flex-col items-center text-center p-6 gap-3 group hover:shadow-lg transition-shadow">
+                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${f.color} flex items-center justify-center text-2xl group-hover:scale-110 transition-transform`}>
+                    {f.icon}
+                  </div>
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">{fTitle}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{fDesc}</p>
+                </Link>
+              </motion.div>
+            );
+          })}
         </motion.div>
       </section>
 

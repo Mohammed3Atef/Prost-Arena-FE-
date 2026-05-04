@@ -155,7 +155,7 @@ export default function AdminUsersPage() {
                 {users.map((u, i) => (
                   <motion.tr key={u._id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.02 }}
                     onClick={() => setSelected(u)}
-                    className={cn('border-t border-gray-100 dark:border-arena-700 hover:bg-gray-50 dark:hover:bg-arena-750 transition-colors cursor-pointer',
+                    className={cn('border-t border-gray-100 dark:border-arena-700 hover:bg-gray-50 dark:hover:bg-arena-700 transition-colors cursor-pointer',
                       u.isBanned && 'opacity-50')}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
@@ -262,7 +262,7 @@ export default function AdminUsersPage() {
                     { label: 'XP', value: selected.xp.toLocaleString(), icon: '⚡' },
                     { label: 'Points', value: selected.points.toLocaleString(), icon: '⭐' },
                   ].map((stat) => (
-                    <div key={stat.label} className="bg-gray-50 dark:bg-arena-750 rounded-xl p-3 text-center">
+                    <div key={stat.label} className="bg-gray-50 dark:bg-arena-700 rounded-xl p-3 text-center">
                       <p className="text-xl">{stat.icon}</p>
                       <p className="font-bold text-gray-900 dark:text-gray-100 text-sm mt-1">{stat.value}</p>
                       <p className="text-xs text-gray-400">{stat.label}</p>

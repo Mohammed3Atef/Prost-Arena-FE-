@@ -18,6 +18,15 @@ const ChallengeConfigSchema = new Schema<IChallengeConfig>({
   updatedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
 }, { timestamps: true });
 
+// HMR-safe model registration. Same pattern as siteSettings.ts/user.ts.
+const EXPECTED_CONFIG_PATHS = ['isEnabled', 'maxAttemptsPerDay', 'enabledCategories'];
+if (mongoose.models.ChallengeConfig) {
+  const existing = Object.keys(mongoose.models.ChallengeConfig.schema.paths);
+  if (EXPECTED_CONFIG_PATHS.some((p) => !existing.includes(p))) {
+    mongoose.deleteModel('ChallengeConfig');
+  }
+}
+
 export const ChallengeConfig: Model<IChallengeConfig> =
   (mongoose.models.ChallengeConfig as Model<IChallengeConfig>) ||
   mongoose.model<IChallengeConfig>('ChallengeConfig', ChallengeConfigSchema);

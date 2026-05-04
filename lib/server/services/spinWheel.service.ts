@@ -5,6 +5,7 @@ import { UserReward } from '@/lib/db/models/userReward';
 import { User } from '@/lib/db/models/user';
 import { Reward } from '@/lib/db/models/reward';
 import { operationalError } from '@/lib/server/error';
+import { progressMissions } from '@/lib/server/services/order.service';
 
 async function cooldownSecs(): Promise<number> {
   const wheel = await SpinWheelConfig.findOne({ isActive: true })
@@ -124,6 +125,10 @@ export async function spin(userId: string | Types.ObjectId) {
 
   user.lastSpinAt = new Date();
   await user.save();
+
+  // Bump any active 'spin' mission. Wrapped inside progressMissions itself so
+  // a mission glitch never blocks the spin response.
+  await progressMissions(userId, 'spin', 1);
 
   await SpinLog.create({
     user: userId,

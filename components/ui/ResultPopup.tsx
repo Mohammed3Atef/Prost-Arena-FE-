@@ -92,6 +92,7 @@ export default function ResultPopup({
       onOpenChange={(o) => { if (!o) onClose(); }}
       size="sm"
       showClose
+      a11yTitle={typeof title === 'string' ? title : 'Result'}
       className="!p-0 overflow-hidden"
     >
       <div className="relative -mx-5 sm:-mx-6 -mt-2">

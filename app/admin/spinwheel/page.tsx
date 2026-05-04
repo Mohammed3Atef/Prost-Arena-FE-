@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Trash2, Save, RefreshCw } from 'lucide-react';
+import Link from 'next/link';
+import { Plus, Trash2, Save, RefreshCw, History } from 'lucide-react';
 import api from '../../../services/api/client';
 import { cn } from '../../../lib/utils';
 import toast from 'react-hot-toast';
+import { FieldFloat } from '../../../components/ui/FieldFloat';
 
 interface Segment {
   label: string; type: 'xp_boost' | 'points' | 'reward' | 'empty' | 'free_item';
@@ -81,28 +83,31 @@ export default function AdminSpinWheelPage() {
           <h1 className="text-xl sm:text-2xl font-display font-bold text-gray-900 dark:text-gray-100">Spin Wheel</h1>
           <p className="text-sm text-gray-400 mt-0.5">Configure segments and probabilities</p>
         </div>
-        <button onClick={save} disabled={saving} className="btn-primary flex items-center gap-2 text-sm">
-          <Save size={15} /> {saving ? 'Saving…' : 'Save Changes'}
-        </button>
+        <div className="flex items-center gap-2">
+          <Link href="/admin/spinwheel/history" className="btn-ghost flex items-center gap-2 text-sm">
+            <History size={15} /> History
+          </Link>
+          <button onClick={save} disabled={saving} className="btn-primary flex items-center gap-2 text-sm">
+            <Save size={15} /> {saving ? 'Saving…' : 'Save Changes'}
+          </button>
+        </div>
       </div>
 
       {/* Wheel settings */}
-      <div className="card space-y-4">
+      <div className="card p-5 space-y-4">
         <h2 className="font-semibold text-gray-900 dark:text-gray-100">Wheel Settings</h2>
         <div className="grid sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Wheel Name</label>
+          <FieldFloat label="Wheel name">
             <input value={wheelName} onChange={(e) => setWheelName(e.target.value)} className="input w-full" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cooldown (hours between spins)</label>
+          </FieldFloat>
+          <FieldFloat label="Cooldown (hours between spins)">
             <input type="number" min="1" max="168" value={cooldown} onChange={(e) => setCooldown(Number(e.target.value))} className="input w-full" />
-          </div>
+          </FieldFloat>
         </div>
       </div>
 
       {/* Probability meter */}
-      <div className="card space-y-2">
+      <div className="card p-5 space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Total probability: <span className={probOk ? 'text-green-500' : 'text-red-500'}>{probPct}%</span>
@@ -119,7 +124,7 @@ export default function AdminSpinWheelPage() {
       </div>
 
       {/* Segments */}
-      <div className="card space-y-3">
+      <div className="card p-5 space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-gray-900 dark:text-gray-100">Segments ({segments.length})</h2>
           <button onClick={addSegment} className="flex items-center gap-1.5 text-sm text-brand-500 hover:text-brand-600 font-medium">
@@ -134,7 +139,7 @@ export default function AdminSpinWheelPage() {
         <div className="space-y-3">
           {segments.map((seg, i) => (
             <motion.div key={i} layout
-              className="flex gap-3 p-3 bg-gray-50 dark:bg-arena-750 rounded-xl items-start flex-wrap sm:flex-nowrap">
+              className="flex gap-3 p-3 bg-gray-50 dark:bg-arena-700 rounded-xl items-start flex-wrap sm:flex-nowrap">
               {/* Color swatch */}
               <div className="flex flex-col items-center gap-1 shrink-0">
                 <div className="w-8 h-8 rounded-lg border-2 border-white shadow cursor-pointer" style={{ backgroundColor: seg.color }}
@@ -146,45 +151,45 @@ export default function AdminSpinWheelPage() {
               </div>
 
               {/* Icon */}
-              <div className="shrink-0">
+              <FieldFloat label="Icon" className="shrink-0">
                 <input value={seg.icon} onChange={(e) => updateSeg(i, 'icon', e.target.value)}
                   className="input w-14 text-center text-lg" maxLength={2} />
-              </div>
+              </FieldFloat>
 
               {/* Label */}
-              <div className="flex-1 min-w-32">
+              <FieldFloat label="Segment label" className="flex-1 min-w-32">
                 <input value={seg.label} onChange={(e) => updateSeg(i, 'label', e.target.value)}
-                  className="input w-full text-sm" placeholder="Segment label" />
-              </div>
+                  className="input w-full text-sm" />
+              </FieldFloat>
 
               {/* Type */}
-              <div className="shrink-0">
+              <FieldFloat label="Type" className="shrink-0">
                 <select value={seg.type} onChange={(e) => updateSeg(i, 'type', e.target.value)}
                   className="input text-sm">
                   {SEGMENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
                 </select>
-              </div>
+              </FieldFloat>
 
               {/* Amount */}
               {seg.type === 'xp_boost' && (
-                <div className="shrink-0 w-24">
+                <FieldFloat label="XP" className="shrink-0 w-24">
                   <input type="number" min="0" value={seg.xpAmount} onChange={(e) => updateSeg(i, 'xpAmount', Number(e.target.value))}
-                    className="input w-full text-sm" placeholder="XP" />
-                </div>
+                    className="input w-full text-sm" />
+                </FieldFloat>
               )}
               {seg.type === 'points' && (
-                <div className="shrink-0 w-24">
+                <FieldFloat label="Points" className="shrink-0 w-24">
                   <input type="number" min="0" value={seg.pointsAmount} onChange={(e) => updateSeg(i, 'pointsAmount', Number(e.target.value))}
-                    className="input w-full text-sm" placeholder="Pts" />
-                </div>
+                    className="input w-full text-sm" />
+                </FieldFloat>
               )}
 
               {/* Probability */}
-              <div className="shrink-0 w-24">
+              <FieldFloat label="Probability (0–1)" className="shrink-0 w-24">
                 <input type="number" min="0" max="1" step="0.01" value={seg.probability}
                   onChange={(e) => updateSeg(i, 'probability', parseFloat(e.target.value) || 0)}
                   className="input w-full text-sm" placeholder="0.10" />
-              </div>
+              </FieldFloat>
 
               {/* Remove */}
               <button onClick={() => removeSeg(i)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 shrink-0">
@@ -197,7 +202,7 @@ export default function AdminSpinWheelPage() {
 
       {/* Preview */}
       {segments.length > 0 && (
-        <div className="card">
+        <div className="card p-5">
           <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Preview</h2>
           <div className="flex flex-wrap gap-2">
             {segments.map((seg, i) => (

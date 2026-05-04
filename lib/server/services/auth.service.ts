@@ -3,10 +3,12 @@ import { randomBytes } from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
 import { User, type IUser } from '@/lib/db/models/user';
 import { Referral } from '@/lib/db/models/referral';
+import { Mission, UserMission } from '@/lib/db/models/mission';
 import { issueTokens, verifyRefreshToken } from '@/lib/server/auth';
 import { generateReferralCode } from '@/lib/server/gamification';
 import { operationalError } from '@/lib/server/error';
 import * as otpService from './otp.service';
+import type { Types } from 'mongoose';
 import type {
   RegisterInput,
   LoginInput,
@@ -22,6 +24,57 @@ function sanitize(user: IUser): Record<string, unknown> {
   delete (obj as any).passwordResetToken;
   delete (obj as any).passwordResetExpires;
   return obj;
+}
+
+/** UTC date-key used to compare login days regardless of clock time. */
+function dayKey(d: Date): string {
+  return new Date(d).toISOString().slice(0, 10);
+}
+
+/**
+ * Updates login-streak missions on each successful login.
+ *
+ *  - Same calendar day as last login → noop (don't double-count).
+ *  - Next consecutive day → increment streak missions by 1.
+ *  - Gap > 1 day → reset streak missions back to 1 (today counts as the new day-1).
+ *
+ * Unlike other mission types this needs reset semantics, so it can't reuse
+ * `progressMissions` directly — handled inline. Wrapped in try/catch so a
+ * mission glitch never blocks login.
+ */
+async function progressLoginStreak(
+  userId: string | Types.ObjectId,
+  prevLogin: Date | null | undefined,
+  now: Date,
+) {
+  try {
+    if (prevLogin && dayKey(prevLogin) === dayKey(now)) return;
+
+    const isConsecutive = !!prevLogin && (() => {
+      const prev = new Date(dayKey(prevLogin));
+      const today = new Date(dayKey(now));
+      const diff = Math.round((today.getTime() - prev.getTime()) / 86400000);
+      return diff === 1;
+    })();
+
+    const missions = await Mission.find({ type: 'login_streak', isActive: true }).lean();
+    for (const mission of missions) {
+      const um = await UserMission.findOneAndUpdate(
+        { user: userId, mission: mission._id, status: 'active' },
+        isConsecutive
+          ? { $inc: { progress: 1 } }
+          : { $set: { progress: 1 } },
+        { upsert: true, new: true },
+      );
+      if (um && um.progress >= mission.target && um.status === 'active') {
+        um.status = 'completed';
+        um.completedAt = new Date();
+        await um.save();
+      }
+    }
+  } catch (err) {
+    console.warn('[auth] login_streak update failed:', err);
+  }
 }
 
 export async function register(input: RegisterInput) {
@@ -64,8 +117,12 @@ export async function login(input: LoginInput) {
 
   if (user.isBanned) throw operationalError('Account is suspended', 403);
 
-  user.lastLoginAt = new Date();
+  const prevLogin = user.lastLoginAt;
+  const now = new Date();
+  user.lastLoginAt = now;
   await user.save();
+
+  await progressLoginStreak(user._id, prevLogin, now);
 
   const tokens = issueTokens(user);
   return { user: sanitize(user), ...tokens };
@@ -129,8 +186,11 @@ export async function verifyOtpAndAuth(input: OtpVerifyInput) {
     console.log(`[auth] new user registered via phone: ${normalised}`);
   } else {
     if (user.isBanned) throw operationalError('Account is suspended', 403);
-    user.lastLoginAt = new Date();
+    const prevLogin = user.lastLoginAt;
+    const now = new Date();
+    user.lastLoginAt = now;
     await user.save();
+    await progressLoginStreak(user._id, prevLogin, now);
   }
 
   const tokens = issueTokens(user);
@@ -243,8 +303,11 @@ export async function signInWithGoogle(input: { idToken?: string; accessToken?: 
   }
 
   if (user.isBanned) throw operationalError('Account is suspended', 403);
-  user.lastLoginAt = new Date();
+  const prevLogin = user.lastLoginAt;
+  const now = new Date();
+  user.lastLoginAt = now;
   await user.save();
+  await progressLoginStreak(user._id, prevLogin, now);
 
   const tokens = issueTokens(user);
   return {

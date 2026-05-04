@@ -10,18 +10,56 @@ import { useConfirm } from '../../../components/ui/ConfirmProvider';
 
 interface Mission {
   _id: string; title: string; description: string; icon: string | null;
-  type: string; target: number; reward: { xp: number; points: number };
+  type: string; target: number;
+  reward: { xp: number; points: number; rewardId: string | null };
   isActive: boolean; isRepeatable: boolean; repeatEvery: string | null; sortOrder: number;
 }
 
-const MISSION_TYPES = ['order_count','order_new_item','challenge_win','spin_wheel','referral','xp_milestone'];
+interface RewardLite {
+  _id: string;
+  name: string;
+  type: string;
+  code: string | null;
+}
+
+// Mission types must match the schema enum in lib/db/models/mission.ts.
+const MISSION_TYPES = [
+  'order_count', 'order_new_item', 'challenge_win', 'referral',
+  'spin', 'login_streak', 'spend_amount',
+] as const;
+
 const TYPE_ICONS: Record<string, string> = {
-  order_count:'🛒', order_new_item:'🍔', challenge_win:'🏆', spin_wheel:'🎡', referral:'👥', xp_milestone:'⚡'
+  order_count:    '🛒',
+  order_new_item: '🍔',
+  challenge_win:  '🏆',
+  referral:       '👥',
+  spin:           '🎡',
+  login_streak:   '🔥',
+  spend_amount:   '💰',
 };
-const EMPTY_FORM = { title: '', description: '', icon: '', type: 'order_count', target: '3', xpReward: '100', pointsReward: '0', isRepeatable: false, repeatEvery: '', sortOrder: '0', isActive: true };
+
+const TYPE_LABELS: Record<string, string> = {
+  order_count:    'Place N orders',
+  order_new_item: 'Try new items',
+  challenge_win:  'Win N challenges',
+  referral:       'Refer N friends',
+  spin:           'Spin the wheel N times',
+  login_streak:   'Login streak (days)',
+  spend_amount:   'Spend total amount',
+};
+
+const EMPTY_FORM = {
+  title: '', description: '', icon: '',
+  type: 'order_count' as (typeof MISSION_TYPES)[number],
+  target: '3',
+  xpReward: '0', pointsReward: '0', rewardId: '',
+  isRepeatable: false, repeatEvery: '',
+  sortOrder: '0', isActive: true,
+};
 
 export default function AdminMissionsPage() {
   const [missions, setMissions] = useState<Mission[]>([]);
+  const [rewards,  setRewards]  = useState<RewardLite[]>([]);
   const [loading,  setLoading]  = useState(true);
   const [modal,    setModal]    = useState(false);
   const [editM,    setEditM]    = useState<Mission | null>(null);
@@ -38,27 +76,54 @@ export default function AdminMissionsPage() {
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  const loadRewards = useCallback(async () => {
+    try {
+      const { data } = await api.get('/rewards', { params: { limit: 200 } });
+      setRewards(data.data ?? []);
+    } catch { setRewards([]); }
+  }, []);
 
-  const openNew = () => { setEditM(null); setForm(EMPTY_FORM); setModal(true); };
+  useEffect(() => { load(); loadRewards(); }, [load, loadRewards]);
+
+  const openNew = () => { setEditM(null); setForm({ ...EMPTY_FORM }); setModal(true); };
   const openEdit = (m: Mission) => {
     setEditM(m);
-    setForm({ title: m.title, description: m.description, icon: m.icon ?? '', type: m.type,
-      target: String(m.target), xpReward: String(m.reward.xp), pointsReward: String(m.reward.points),
-      isRepeatable: m.isRepeatable, repeatEvery: m.repeatEvery ?? '', sortOrder: String(m.sortOrder), isActive: m.isActive });
+    setForm({
+      title: m.title, description: m.description, icon: m.icon ?? '',
+      type: m.type as (typeof MISSION_TYPES)[number],
+      target: String(m.target),
+      xpReward:     String(m.reward.xp     ?? 0),
+      pointsReward: String(m.reward.points ?? 0),
+      rewardId:     m.reward.rewardId ?? '',
+      isRepeatable: m.isRepeatable,
+      repeatEvery:  m.repeatEvery ?? '',
+      sortOrder:    String(m.sortOrder),
+      isActive:     m.isActive,
+    });
     setModal(true);
   };
 
   const save = async () => {
     if (!form.title.trim()) return toast.error('Title is required');
+    const xp     = parseInt(form.xpReward)     || 0;
+    const points = parseInt(form.pointsReward) || 0;
+    const rewardId = form.rewardId || null;
+    if (xp <= 0 && points <= 0 && !rewardId) {
+      return toast.error('Add at least one reward — XP, points, or a coupon');
+    }
     setSaving(true);
     try {
       const payload = {
-        title: form.title, description: form.description, icon: form.icon || null,
-        type: form.type, target: parseInt(form.target),
-        reward: { xp: parseInt(form.xpReward), points: parseInt(form.pointsReward) },
-        isRepeatable: form.isRepeatable, repeatEvery: form.repeatEvery || null,
-        sortOrder: parseInt(form.sortOrder), isActive: form.isActive,
+        title: form.title.trim(),
+        description: form.description.trim(),
+        icon: form.icon || null,
+        type: form.type,
+        target: parseInt(form.target) || 1,
+        reward: { xp, points, rewardId },
+        isRepeatable: form.isRepeatable,
+        repeatEvery: form.repeatEvery || null,
+        sortOrder: parseInt(form.sortOrder) || 0,
+        isActive: form.isActive,
       };
       if (editM) { await api.put(`/missions/${editM._id}`, payload); toast.success('Mission updated'); }
       else       { await api.post('/missions', payload); toast.success('Mission created'); }
@@ -109,9 +174,10 @@ export default function AdminMissionsPage() {
                   {m.isRepeatable && <span className="text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-500 px-2 py-0.5 rounded-full capitalize">{m.repeatEvery}</span>}
                 </div>
                 <p className="text-xs text-gray-400 mt-0.5">{m.description}</p>
-                <div className="flex items-center gap-3 mt-1.5 text-xs">
-                  <span className="text-brand-500 font-medium">+{m.reward.xp} XP</span>
+                <div className="flex items-center gap-3 mt-1.5 text-xs flex-wrap">
+                  {m.reward.xp > 0     && <span className="text-brand-500 font-medium">+{m.reward.xp} XP</span>}
                   {m.reward.points > 0 && <span className="text-gold-500 font-medium">+{m.reward.points} pts</span>}
+                  {m.reward.rewardId   && <span className="text-purple-500 font-medium">🎁 coupon</span>}
                   <span className="text-gray-400">Target: {m.target}</span>
                 </div>
               </div>
@@ -146,8 +212,8 @@ export default function AdminMissionsPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="field-label">Type</label>
-                    <select className="input" value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))}>
-                      {MISSION_TYPES.map((t) => <option key={t} value={t}>{TYPE_ICONS[t]} {t.replace(/_/g,' ')}</option>)}
+                    <select className="input" value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value as (typeof MISSION_TYPES)[number] }))}>
+                      {MISSION_TYPES.map((t) => <option key={t} value={t}>{TYPE_ICONS[t]} {TYPE_LABELS[t]}</option>)}
                     </select>
                   </div>
                   <div><label className="field-label">Icon (emoji)</label><input className="input text-xl" value={form.icon} onChange={(e) => setForm((p) => ({ ...p, icon: e.target.value }))} placeholder="🎯" /></div>
@@ -156,6 +222,24 @@ export default function AdminMissionsPage() {
                   <div><label className="field-label">Target</label><input type="number" min="1" className="input" value={form.target} onChange={(e) => setForm((p) => ({ ...p, target: e.target.value }))} /></div>
                   <div><label className="field-label">XP Reward</label><input type="number" min="0" className="input" value={form.xpReward} onChange={(e) => setForm((p) => ({ ...p, xpReward: e.target.value }))} /></div>
                   <div><label className="field-label">Points</label><input type="number" min="0" className="input" value={form.pointsReward} onChange={(e) => setForm((p) => ({ ...p, pointsReward: e.target.value }))} /></div>
+                </div>
+                <div>
+                  <label className="field-label">Bonus coupon (optional)</label>
+                  <select
+                    className="input"
+                    value={form.rewardId}
+                    onChange={(e) => setForm((p) => ({ ...p, rewardId: e.target.value }))}
+                  >
+                    <option value="">— No coupon —</option>
+                    {rewards.map((r) => (
+                      <option key={r._id} value={r._id}>
+                        {r.name}{r.code ? ` · ${r.code}` : ''} ({r.type.replace(/_/g, ' ')})
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Granted as a one-use UserReward when the player claims this mission. Set XP/Points to 0 if the coupon is the only reward.
+                  </p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>

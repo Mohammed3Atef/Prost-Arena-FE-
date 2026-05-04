@@ -18,7 +18,16 @@ export async function GET(req: NextRequest, { params }: Params) {
     if (error) return error;
 
     const { id } = await params;
-    const order: any = await Order.findById(id).populate('user', 'name avatar level').lean();
+    const isAdmin = user.role === 'admin' || user.role === 'superadmin';
+
+    let q = Order.findById(id).populate('user', 'name email phone avatar level');
+    if (isAdmin) {
+      // Admin needs the full coupon detail + item images for the detail page.
+      q = q
+        .populate('couponReward', 'name code type discountPct discountFixed source')
+        .populate('items.menuItem', 'image');
+    }
+    const order: any = await q.lean();
     if (!order) return notFound();
 
     if (user.role === 'user' && order.user?._id?.toString() !== user._id.toString()) {

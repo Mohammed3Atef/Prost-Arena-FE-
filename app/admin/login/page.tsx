@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Eye, EyeOff, LogIn, ShieldAlert } from "lucide-react";
 import { useAuthStore } from "../../../store/useAuthStore";
 import toast from "react-hot-toast";
+import { FieldFloat } from "../../../components/ui/FieldFloat";
 
 function LoginForm() {
   const { login, isLoading, user, isHydrated } = useAuthStore();
@@ -76,28 +77,24 @@ function LoginForm() {
           className="bg-white dark:bg-arena-800 rounded-3xl shadow-xl p-8 space-y-4"
         >
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-              Email
-            </label>
-            <input
-              type="email"
-              autoCapitalize="none"
-              placeholder="admin@example.com"
-              className="input"
-              value={form.email}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, email: e.target.value }))
-              }
-            />
+            <FieldFloat label="Email">
+              <input
+                type="email"
+                autoCapitalize="none"
+                placeholder="admin@example.com"
+                className="input"
+                value={form.email}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, email: e.target.value }))
+                }
+              />
+            </FieldFloat>
             {errors.email && (
               <p className="text-red-500 text-xs mt-1">{errors.email}</p>
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-              Password
-            </label>
-            <div className="relative">
+            <FieldFloat label="Password">
               <input
                 type={showPw ? "text" : "password"}
                 placeholder="••••••••"
@@ -114,7 +111,7 @@ function LoginForm() {
               >
                 {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
-            </div>
+            </FieldFloat>
             {errors.password && (
               <p className="text-red-500 text-xs mt-1">{errors.password}</p>
             )}

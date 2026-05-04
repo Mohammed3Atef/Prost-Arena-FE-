@@ -129,6 +129,39 @@
            transition-all duration-200;
   }
 
+  /* Notched-outline field — see components/ui/FieldFloat.tsx.
+     Native <fieldset>+<legend> draws the visible border with a gap around
+     the label text (browser handles the notch). Transparent fill so it
+     inherits whatever surface sits behind — no bg-matching needed.
+     Inner .input is restyled to be borderless/transparent so only the
+     fieldset chrome shows around it. */
+  .field-float {
+    @apply relative block w-full m-0 px-0 pt-0 pb-0 min-w-0
+           rounded-xl border border-gray-200 dark:border-arena-600
+           bg-transparent transition-colors duration-200;
+  }
+  .field-float:focus-within {
+    @apply border-brand-500;
+  }
+  .field-float > legend {
+    /* `legend` natively cuts the top border; the gap auto-fits the text. */
+    @apply px-1.5 ms-3 text-[11px] font-bold uppercase tracking-[0.12em]
+           leading-none text-gray-500 dark:text-gray-400 select-none;
+  }
+  .field-float:focus-within > legend {
+    @apply text-brand-500 dark:text-brand-400;
+  }
+  .field-float > .input,
+  .field-float > .input:focus {
+    @apply border-0 bg-transparent shadow-none rounded-none ring-0 outline-none;
+  }
+  /* Strip rings on direct nested inputs too (e.g. password fields where the
+     input is a sibling of an absolutely-positioned eye-toggle button). */
+  .field-float .input,
+  .field-float .input:focus {
+    @apply border-0 bg-transparent shadow-none rounded-none ring-0 outline-none;
+  }
+
   /* Section heading */
   .section-title {
     @apply text-xl sm:text-2xl font-display font-bold text-gray-900 dark:text-gray-100;

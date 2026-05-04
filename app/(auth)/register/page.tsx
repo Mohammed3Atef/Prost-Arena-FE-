@@ -10,6 +10,7 @@ import toast from "react-hot-toast";
 import { useLocale } from "../../../components/layout/LocaleProvider";
 import { useSiteSettings } from "../../../components/layout/SiteSettingsProvider";
 import GoogleAuthButton from "../../../components/auth/GoogleAuthButton";
+import { FieldFloat } from "../../../components/ui/FieldFloat";
 
 function EmailForm() {
   const { register: registerUser, isLoading } = useAuthStore();
@@ -62,39 +63,34 @@ function EmailForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-          {t("auth.fullName")}
-        </label>
-        <input
-          type="text"
-          placeholder={t("auth.fullNamePlaceholder")}
-          className="input"
-          {...field("name")}
-        />
+        <FieldFloat label={t("auth.fullName")}>
+          <input
+            type="text"
+            placeholder={t("auth.fullNamePlaceholder")}
+            className="input"
+            {...field("name")}
+          />
+        </FieldFloat>
         {errors.name && (
           <p className="text-red-500 text-xs mt-1">{errors.name}</p>
         )}
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-          {t("auth.email")}
-        </label>
-        <input
-          type="email"
-          placeholder={t("auth.emailPlaceholder")}
-          className="input"
-          autoCapitalize="none"
-          {...field("email")}
-        />
+        <FieldFloat label={t("auth.email")}>
+          <input
+            type="email"
+            placeholder={t("auth.emailPlaceholder")}
+            className="input"
+            autoCapitalize="none"
+            {...field("email")}
+          />
+        </FieldFloat>
         {errors.email && (
           <p className="text-red-500 text-xs mt-1">{errors.email}</p>
         )}
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-          {t("auth.password")}
-        </label>
-        <div className="relative">
+        <FieldFloat label={t("auth.password")}>
           <input
             type={showPw ? "text" : "password"}
             placeholder={t("auth.passwordPlaceholder")}
@@ -108,24 +104,20 @@ function EmailForm() {
           >
             {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
-        </div>
+        </FieldFloat>
         {errors.password && (
           <p className="text-red-500 text-xs mt-1">{errors.password}</p>
         )}
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-          {t("auth.referralCode")}{" "}
-          <span className="text-gray-400 font-normal">
-            {t("auth.optional")}
-          </span>
-        </label>
-        <input
-          type="text"
-          placeholder={t("auth.referralPlaceholder")}
-          className="input uppercase"
-          {...field("referralCode")}
-        />
+        <FieldFloat label={`${t("auth.referralCode")} — ${t("auth.optional")}`}>
+          <input
+            type="text"
+            placeholder={t("auth.referralPlaceholder")}
+            className="input uppercase"
+            {...field("referralCode")}
+          />
+        </FieldFloat>
       </div>
       <motion.button
         type="submit"

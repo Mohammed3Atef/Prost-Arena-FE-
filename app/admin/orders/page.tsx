@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Search, ChevronLeft, ChevronRight, X, MapPin, Phone, Package } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../../../services/api/client';
 import { formatCurrency, cn } from '../../../lib/utils';
 import toast from 'react-hot-toast';
@@ -13,8 +13,6 @@ interface Order {
   items: OrderItem[]; createdAt: string;
   user: { name: string; email: string } | null;
   guestInfo: { name: string; phone: string; email?: string } | null;
-  deliveryAddress: { street: string; city: string } | null;
-  xpEarned: number;
 }
 
 const STATUSES = ['pending','confirmed','preparing','ready','out_for_delivery','delivered','cancelled'];
@@ -34,13 +32,13 @@ const NEXT_STATUS: Record<string, string> = {
 };
 
 export default function AdminOrdersPage() {
+  const router = useRouter();
   const [orders,   setOrders]   = useState<Order[]>([]);
   const [loading,  setLoading]  = useState(true);
   const [search,   setSearch]   = useState('');
   const [status,   setStatus]   = useState('');
   const [page,     setPage]     = useState(1);
   const [total,    setTotal]    = useState(0);
-  const [selected, setSelected] = useState<Order | null>(null);
   const [updating, setUpdating] = useState(false);
   const LIMIT = 20;
 
@@ -60,15 +58,19 @@ export default function AdminOrdersPage() {
   useEffect(() => { setPage(1); }, [status, search]);
   useEffect(() => { load(); }, [load]);
 
-  const updateStatus = async (orderId: string, newStatus: string) => {
+  const advanceStatus = async (orderId: string, currentStatus: string) => {
+    const next = NEXT_STATUS[currentStatus];
+    if (!next) return;
     setUpdating(true);
     try {
-      await api.patch(`/orders/${orderId}/status`, { status: newStatus });
-      setOrders((p) => p.map((o) => o._id === orderId ? { ...o, status: newStatus } : o));
-      if (selected?._id === orderId) setSelected((p) => p ? { ...p, status: newStatus } : null);
-      toast.success(`Order marked as ${newStatus}`);
-    } catch (e: any) { toast.error(e?.response?.data?.message || 'Update failed'); }
-    finally { setUpdating(false); }
+      await api.patch(`/orders/${orderId}/status`, { status: next });
+      setOrders((p) => p.map((o) => o._id === orderId ? { ...o, status: next } : o));
+      toast.success(`Marked as ${next.replace(/_/g, ' ')}`);
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || 'Update failed');
+    } finally {
+      setUpdating(false);
+    }
   };
 
   const pages = Math.ceil(total / LIMIT);
@@ -103,7 +105,7 @@ export default function AdminOrdersPage() {
           <button key={s} onClick={() => setStatus(s)}
             className={cn('px-3 py-1.5 rounded-xl text-xs font-semibold capitalize transition-all',
               status === s ? 'bg-brand-500 text-white' : 'bg-gray-100 dark:bg-arena-800 text-gray-600 dark:text-gray-400 hover:text-gray-900')}>
-            {s || 'All'}
+            {s.replace(/_/g, ' ') || 'All'}
           </button>
         ))}
       </div>
@@ -123,7 +125,8 @@ export default function AdminOrdersPage() {
             {loading ? Array.from({ length: 8 }).map((_, i) => (
               <tr key={i}><td colSpan={6} className="px-5 py-3"><div className="skeleton h-6 rounded w-full" /></td></tr>
             )) : orders.map((order) => (
-              <tr key={order._id} onClick={() => setSelected(order)}
+              <tr key={order._id}
+                onClick={() => router.push(`/admin/orders/${order._id}`)}
                 className="hover:bg-gray-50 dark:hover:bg-arena-800/50 transition-colors cursor-pointer">
                 <td className="px-5 py-3.5">
                   <div className="font-mono text-xs font-semibold text-gray-900 dark:text-gray-100">#{order.orderNumber}</div>
@@ -142,7 +145,7 @@ export default function AdminOrdersPage() {
                 <td className="px-4 py-3.5 hidden lg:table-cell text-xs text-gray-400">{new Date(order.createdAt).toLocaleString()}</td>
                 <td className="px-4 py-3.5">
                   {NEXT_STATUS[order.status] && (
-                    <button onClick={(e) => { e.stopPropagation(); updateStatus(order._id, NEXT_STATUS[order.status]); }}
+                    <button onClick={(e) => { e.stopPropagation(); advanceStatus(order._id, order.status); }}
                       disabled={updating}
                       className="text-xs text-brand-500 hover:text-brand-600 font-semibold whitespace-nowrap capitalize">
                       → {NEXT_STATUS[order.status].replace(/_/g,' ')}
@@ -174,86 +177,6 @@ export default function AdminOrdersPage() {
           </div>
         </div>
       )}
-
-      {/* Order Detail Drawer */}
-      <AnimatePresence>
-        {selected && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-end bg-black/40 backdrop-blur-sm"
-            onClick={(e) => e.target === e.currentTarget && setSelected(null)}>
-            <motion.div initial={{ x: 400 }} animate={{ x: 0 }} exit={{ x: 400 }} transition={{ type: 'spring', damping: 30 }}
-              className="bg-white dark:bg-arena-800 w-full max-w-sm h-full shadow-2xl flex flex-col overflow-y-auto">
-              <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 dark:border-arena-700 shrink-0">
-                <div>
-                  <h2 className="font-bold text-gray-900 dark:text-gray-100">#{selected.orderNumber}</h2>
-                  <p className="text-xs text-gray-400">{new Date(selected.createdAt).toLocaleString()}</p>
-                </div>
-                <button onClick={() => setSelected(null)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-arena-700 text-gray-400"><X size={18} /></button>
-              </div>
-
-              <div className="p-6 space-y-5 flex-1">
-                {/* Status badge + advance button */}
-                <div className="flex items-center justify-between gap-3">
-                  <span className={cn('text-sm font-semibold px-3 py-1 rounded-full capitalize', STATUS_COLORS[selected.status])}>
-                    {selected.status.replace(/_/g,' ')}
-                  </span>
-                  {NEXT_STATUS[selected.status] && (
-                    <button onClick={() => updateStatus(selected._id, NEXT_STATUS[selected.status])} disabled={updating}
-                      className="btn-primary text-xs py-1.5 px-3 capitalize">
-                      Mark as {NEXT_STATUS[selected.status].replace(/_/g,' ')}
-                    </button>
-                  )}
-                </div>
-
-                {/* All status changes */}
-                {selected.status !== 'delivered' && selected.status !== 'cancelled' && (
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Change Status</p>
-                    <div className="flex flex-wrap gap-2">
-                      {STATUSES.map((s) => (
-                        <button key={s} disabled={updating || s === selected.status}
-                          onClick={() => updateStatus(selected._id, s)}
-                          className={cn('text-xs px-2.5 py-1 rounded-lg capitalize font-medium border transition-all',
-                            s === selected.status
-                              ? 'bg-brand-500 text-white border-brand-500'
-                              : 'border-gray-200 dark:border-arena-600 text-gray-600 dark:text-gray-400 hover:border-brand-400 hover:text-brand-500')}>
-                          {s.replace(/_/g,' ')}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Customer */}
-                <div>
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Customer</p>
-                  <div className="space-y-1 text-sm">
-                    <p className="font-medium text-gray-900 dark:text-gray-100">{customerName(selected)}</p>
-                    {selected.guestInfo?.phone && <p className="flex items-center gap-1.5 text-gray-500"><Phone size={12} />{selected.guestInfo.phone}</p>}
-                    {selected.deliveryAddress && <p className="flex items-start gap-1.5 text-gray-500"><MapPin size={12} className="mt-0.5 shrink-0" />{selected.deliveryAddress.street}, {selected.deliveryAddress.city}</p>}
-                  </div>
-                </div>
-
-                {/* Items */}
-                <div>
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Items</p>
-                  <div className="space-y-2">
-                    {selected.items?.map((item, i) => (
-                      <div key={i} className="flex justify-between text-sm">
-                        <span className="text-gray-700 dark:text-gray-300">{item.quantity}× {item.name}</span>
-                        <span className="text-gray-500">{formatCurrency(item.subtotal)}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="border-t border-gray-100 dark:border-arena-700 mt-3 pt-3 flex justify-between font-bold text-gray-900 dark:text-gray-100">
-                    <span>Total</span><span>{formatCurrency(selected.total)}</span>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

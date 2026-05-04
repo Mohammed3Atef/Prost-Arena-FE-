@@ -10,6 +10,7 @@ import toast from "react-hot-toast";
 import { useLocale } from "../../../components/layout/LocaleProvider";
 import { useSiteSettings } from "../../../components/layout/SiteSettingsProvider";
 import GoogleAuthButton from "../../../components/auth/GoogleAuthButton";
+import { FieldFloat } from "../../../components/ui/FieldFloat";
 
 const PASSKEY_HINT_KEY = "pa-passkey-hint";
 
@@ -46,26 +47,22 @@ function EmailForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-          {t("auth.email")}
-        </label>
-        <input
-          type="email"
-          placeholder={t("auth.emailPlaceholder")}
-          className="input"
-          autoCapitalize="none"
-          value={form.email}
-          onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-        />
+        <FieldFloat label={t("auth.email")}>
+          <input
+            type="email"
+            placeholder={t("auth.emailPlaceholder")}
+            className="input"
+            autoCapitalize="none"
+            value={form.email}
+            onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+          />
+        </FieldFloat>
         {errors.email && (
           <p className="text-red-500 text-xs mt-1">{errors.email}</p>
         )}
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-          {t("auth.password")}
-        </label>
-        <div className="relative">
+        <FieldFloat label={t("auth.password")}>
           <input
             type={showPw ? "text" : "password"}
             placeholder="••••••••"
@@ -82,7 +79,7 @@ function EmailForm() {
           >
             {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
-        </div>
+        </FieldFloat>
         {errors.password && (
           <p className="text-red-500 text-xs mt-1">{errors.password}</p>
         )}

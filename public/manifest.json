@@ -1,6 +1,6 @@
 {
-  "name": "Prost Arena — Eat. Play. Earn.",
-  "short_name": "Prost Arena",
+  "name": "Prost Arena",
+  "short_name": "Prost",
   "description": "Gamified food ordering — order, challenge, level up, earn rewards.",
   "start_url": "/",
   "scope": "/",

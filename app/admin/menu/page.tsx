@@ -197,7 +197,7 @@ export default function AdminMenuPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={15} />
               <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search items…" className="input pl-9 w-full" />
             </div>
-            <select value={filterCat} onChange={(e) => setFilterCat(e.target.value)} className="input w-44">
+            <select value={filterCat} onChange={(e) => setFilterCat(e.target.value)} className="input w-full sm:w-44">
               <option value="">All Categories</option>
               {cats.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
             </select>

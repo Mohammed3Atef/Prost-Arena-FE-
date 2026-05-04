@@ -8,9 +8,12 @@ import mongoose, { Schema, Model, Document, Types } from 'mongoose';
 export interface IBanner {
   _id?:        Types.ObjectId;
   title:       string;
+  titleAr:     string;
   subtitle:    string;
+  subtitleAr:  string;
   image:       string | null;
   ctaLabel:    string;
+  ctaLabelAr:  string;
   ctaUrl:      string;
   isActive:    boolean;
   sortOrder:   number;
@@ -19,7 +22,9 @@ export interface IBanner {
 export interface IFeatureCard {
   icon:        string;
   title:       string;
+  titleAr:     string;
   desc:        string;
+  descAr:      string;
   href:        string;
   color:       string;
 }
@@ -38,12 +43,15 @@ export interface ISiteSettings extends Document {
   brandColor:     string;     // hex #RRGGBB
   goldColor:      string;     // hex #RRGGBB
 
-  // Hero
+  // Hero (with optional Arabic suffixed counterparts)
   heroBadge:      string;
+  heroBadgeAr:    string;
   heroTitle:      string;     // supports inline {{accent:...}} for the gradient word
+  heroTitleAr:    string;
   heroSubtitle:   string;
-  heroPrimaryCta: { label: string; href: string };
-  heroSecondaryCta: { label: string; href: string };
+  heroSubtitleAr: string;
+  heroPrimaryCta:   { label: string; labelAr: string; href: string };
+  heroSecondaryCta: { label: string; labelAr: string; href: string };
 
   // Feature cards
   featureCards:   IFeatureCard[];
@@ -69,20 +77,25 @@ export interface ISiteSettings extends Document {
 
 const BannerSchema = new Schema<IBanner>({
   title:       { type: String, required: true },
+  titleAr:     { type: String, default: '' },
   subtitle:    { type: String, default: '' },
+  subtitleAr:  { type: String, default: '' },
   image:       { type: String, default: null },
   ctaLabel:    { type: String, default: '' },
+  ctaLabelAr:  { type: String, default: '' },
   ctaUrl:      { type: String, default: '' },
   isActive:    { type: Boolean, default: true },
   sortOrder:   { type: Number, default: 0 },
 }, { _id: true });
 
 const FeatureCardSchema = new Schema<IFeatureCard>({
-  icon:  { type: String, required: true },
-  title: { type: String, required: true },
-  desc:  { type: String, default: '' },
-  href:  { type: String, required: true },
-  color: { type: String, default: 'from-brand-500 to-brand-600' },
+  icon:    { type: String, required: true },
+  title:   { type: String, required: true },
+  titleAr: { type: String, default: '' },
+  desc:    { type: String, default: '' },
+  descAr:  { type: String, default: '' },
+  href:    { type: String, required: true },
+  color:   { type: String, default: 'from-brand-500 to-brand-600' },
 }, { _id: false });
 
 const DeliveryCitySchema = new Schema<IDeliveryCity>({
@@ -92,10 +105,10 @@ const DeliveryCitySchema = new Schema<IDeliveryCity>({
 }, { _id: true });
 
 const DEFAULT_FEATURE_CARDS: IFeatureCard[] = [
-  { icon: '🍔', title: 'Order & Earn XP',  desc: 'Every order levels you up', href: '/menu',        color: 'from-brand-500 to-brand-600'   },
-  { icon: '⚡', title: 'Daily Challenges', desc: 'Win big discounts daily',   href: '/challenges',  color: 'from-gold-500 to-gold-600'     },
-  { icon: '🎡', title: 'Spin the Wheel',   desc: 'Free daily spin awaits',    href: '/spin',        color: 'from-purple-500 to-purple-600' },
-  { icon: '🏆', title: 'Leaderboard',      desc: 'Compete with the city',     href: '/leaderboard', color: 'from-green-500 to-green-600'   },
+  { icon: '🍔', title: 'Order & Earn XP',  titleAr: '', desc: 'Every order levels you up', descAr: '', href: '/menu',        color: 'from-brand-500 to-brand-600'   },
+  { icon: '⚡', title: 'Daily Challenges', titleAr: '', desc: 'Win big discounts daily',   descAr: '', href: '/challenges',  color: 'from-gold-500 to-gold-600'     },
+  { icon: '🎡', title: 'Spin the Wheel',   titleAr: '', desc: 'Free daily spin awaits',    descAr: '', href: '/spin',        color: 'from-purple-500 to-purple-600' },
+  { icon: '🏆', title: 'Leaderboard',      titleAr: '', desc: 'Compete with the city',     descAr: '', href: '/leaderboard', color: 'from-green-500 to-green-600'   },
 ];
 
 const SiteSettingsSchema = new Schema<ISiteSettings>({
@@ -104,11 +117,22 @@ const SiteSettingsSchema = new Schema<ISiteSettings>({
   brandColor: { type: String, default: '#ff6b35' },
   goldColor:  { type: String, default: '#f59e0b' },
 
-  heroBadge:    { type: String, default: '🎮 Gamified Food Experience' },
-  heroTitle:    { type: String, default: 'EAT. PLAY. {{accent:WIN}}.' },
-  heroSubtitle: { type: String, default: 'Order food, crush challenges, spin the wheel, and climb the leaderboard. Every meal is an adventure.' },
-  heroPrimaryCta:   { label: { type: String, default: 'Start Ordering' },  href: { type: String, default: '/menu' } },
-  heroSecondaryCta: { label: { type: String, default: 'Create Account' }, href: { type: String, default: '/register' } },
+  heroBadge:      { type: String, default: '🎮 Gamified Food Experience' },
+  heroBadgeAr:    { type: String, default: '' },
+  heroTitle:      { type: String, default: 'EAT. PLAY. {{accent:WIN}}.' },
+  heroTitleAr:    { type: String, default: '' },
+  heroSubtitle:   { type: String, default: 'Order food, crush challenges, spin the wheel, and climb the leaderboard. Every meal is an adventure.' },
+  heroSubtitleAr: { type: String, default: '' },
+  heroPrimaryCta:   {
+    label:   { type: String, default: 'Start Ordering' },
+    labelAr: { type: String, default: '' },
+    href:    { type: String, default: '/menu' },
+  },
+  heroSecondaryCta: {
+    label:   { type: String, default: 'Create Account' },
+    labelAr: { type: String, default: '' },
+    href:    { type: String, default: '/register' },
+  },
 
   featureCards: { type: [FeatureCardSchema], default: DEFAULT_FEATURE_CARDS },
   banners:      { type: [BannerSchema], default: [] },
@@ -129,7 +153,7 @@ const SiteSettingsSchema = new Schema<ISiteSettings>({
 // HMR-safe model registration. Next.js dev hot-reloads this module without
 // clearing `mongoose.models`, which can leave a stale model whose schema
 // predates fields we've since added. Detect that and re-register.
-const EXPECTED_PATHS = ['deliveryFee', 'deliveryCities'];
+const EXPECTED_PATHS = ['deliveryFee', 'deliveryCities', 'heroTitleAr'];
 if (mongoose.models.SiteSettings) {
   const existing = Object.keys(mongoose.models.SiteSettings.schema.paths);
   if (EXPECTED_PATHS.some((p) => !existing.includes(p))) {

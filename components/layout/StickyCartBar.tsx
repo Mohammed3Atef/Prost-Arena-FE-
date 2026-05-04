@@ -9,6 +9,10 @@ import { useLocale } from './LocaleProvider';
 import { formatCurrency } from '../../lib/utils';
 
 const HIDDEN_PREFIXES = ['/cart', '/admin', '/login', '/register'];
+// Pages that have their own bottom bar — showing the global one would stack
+// on top and hide the page's primary CTA on mobile.
+// `/menu/[id]` matches but `/menu` (list) doesn't.
+const MENU_DETAIL = /^\/menu\/[^/]+$/;
 
 export default function StickyCartBar() {
   const pathname  = usePathname();
@@ -19,6 +23,7 @@ export default function StickyCartBar() {
   const itemCount = getItemCount();
   if (itemCount === 0) return null;
   if (HIDDEN_PREFIXES.some((p) => pathname?.startsWith(p))) return null;
+  if (pathname && MENU_DETAIL.test(pathname)) return null;
   const subtotal = getSubtotal();
 
   return (

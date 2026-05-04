@@ -5,6 +5,9 @@ import { Question } from '@/lib/db/models/question';
 import { User } from '@/lib/db/models/user';
 import { getConfig } from '@/lib/db/models/challengeConfig';
 import { getSiteSettings } from '@/lib/db/models/siteSettings';
+import { Reward } from '@/lib/db/models/reward';
+import { UserReward } from '@/lib/db/models/userReward';
+import { progressMissions } from '@/lib/server/services/order.service';
 import { operationalError } from '@/lib/server/error';
 
 const ADMIN_QUESTIONS_FILTER = { isActive: true, createdBy: { $ne: null } };
@@ -39,60 +42,78 @@ export async function getDailyChallenge(
     }
   }
 
-  let challenge: any = await Challenge.findOne({ type: 'daily', date: today, category })
-    .populate('questions').lean();
+  // 1. Find the admin-curated active template for this (type, category). This is
+  //    the source of truth — if no active template exists, the customer gets nothing.
+  //    Per-day instances must come from the *current* active template, otherwise they
+  //    are stale (admin disabled, swapped, or replaced the template) and ignored.
+  const template: any = await Challenge.findOne({
+    type: 'daily',
+    category,
+    isActive: true,
+    date: null,
+  }).populate('questions').lean();
+
+  if (!template) {
+    throw operationalError(
+      `No "${category}" challenge is available right now. Pick a different category or ask the admin to enable one.`,
+      404,
+    );
+  }
+
+  const templateQuestionIds = (template.questions || [])
+    .filter(Boolean)
+    .map((q: any) => q._id);
+
+  if (templateQuestionIds.length === 0) {
+    throw operationalError(
+      `The "${category}" challenge has no questions yet. Ask the admin to add some.`,
+      404,
+    );
+  }
+
+  // 2. Today's instance — only honor it if it was cloned from the *current* active
+  //    template. This invalidates stale instances from a previously-active template.
+  let challenge: any = await Challenge.findOne({
+    type: 'daily',
+    date: today,
+    category,
+    templateId: template._id,
+  }).populate('questions').lean();
 
   if (challenge) {
     challenge.questions = (challenge.questions || []).filter(Boolean);
-  }
-
-  if (challenge && challenge.questions.length === 0) {
+    if (challenge.questions.length > 0) return challenge;
+    // Empty after populate (questions deleted) — purge and rebuild from template.
     await Challenge.findByIdAndDelete(challenge._id);
-    challenge = null;
   }
 
-  if (!challenge) {
-    const questions: any[] = await Question.aggregate([
-      { $match: { ...ADMIN_QUESTIONS_FILTER, category } },
-      { $sample: { size: 10 } },
-      { $project: { text: 1, options: 1, difficulty: 1, explanation: 1, correctIndex: 1 } },
-    ]);
+  // 3. No fresh per-day instance — clone from the active template.
+  const settings = await getSiteSettings();
+  const reward = template.reward?.xp != null
+    ? {
+        xp:          template.reward.xp,
+        points:      template.reward.points      ?? 0,
+        discountPct: template.reward.discountPct ?? 0,
+      }
+    : {
+        xp:          settings.dailyChallengeReward?.xp          ?? 100,
+        points:      settings.dailyChallengeReward?.points      ?? 50,
+        discountPct: settings.dailyChallengeReward?.discountPct ?? 10,
+      };
 
-    if (questions.length < 5) {
-      const existingIds = questions.map((q) => q._id);
-      const extra: any[] = await Question.aggregate([
-        { $match: { ...ADMIN_QUESTIONS_FILTER, category: 'general', _id: { $nin: existingIds } } },
-        { $sample: { size: 10 - questions.length } },
-        { $project: { text: 1, options: 1, difficulty: 1, explanation: 1, correctIndex: 1 } },
-      ]);
-      questions.push(...extra);
-    }
+  const doc = await Challenge.create({
+    type: 'daily',
+    category,
+    date: today,
+    questions: templateQuestionIds,
+    status: 'active',
+    expiresAt: new Date(new Date().setHours(23, 59, 59, 999)),
+    timeLimit: template.timeLimit ?? 30,
+    reward,
+    templateId: template._id,
+  });
 
-    if (questions.length === 0) {
-      throw operationalError('No questions available yet. Add questions from the admin dashboard first.', 404);
-    }
-
-    const settings = await getSiteSettings();
-    const reward = {
-      xp:          settings.dailyChallengeReward?.xp          ?? 100,
-      points:      settings.dailyChallengeReward?.points      ?? 50,
-      discountPct: settings.dailyChallengeReward?.discountPct ?? 10,
-    };
-
-    const doc = await Challenge.create({
-      type: 'daily',
-      category,
-      date: today,
-      questions: questions.map((q) => q._id),
-      status: 'active',
-      expiresAt: new Date(new Date().setHours(23, 59, 59, 999)),
-      reward,
-    });
-
-    challenge = await Challenge.findById(doc._id).populate('questions').lean();
-  }
-
-  return challenge;
+  return await Challenge.findById(doc._id).populate('questions').lean();
 }
 
 export async function submitDailyAnswers(
@@ -132,6 +153,8 @@ export async function submitDailyAnswers(
   let xpAwarded = 0;
   let pointsAwarded = 0;
   let discountPct = 0;
+  let discountCoupon: string | null = null;
+  let userRewardId: string | null = null;
 
   if (allCorrect) {
     xpAwarded = challenge.reward.xp;
@@ -144,6 +167,36 @@ export async function submitDailyAnswers(
       user.points += pointsAwarded;
       await user.save();
     }
+
+    // Create a real UserReward so the discount actually appears in /rewards
+    // and can be applied to the cart by clicking, not just by typing a code.
+    if (discountPct > 0) {
+      const code = `WIN${challenge.category.slice(0, 3).toUpperCase()}${discountPct}`;
+      const rewardName = `${discountPct}% off — ${challenge.category} challenge win`;
+      let reward: any = await Reward.findOne({ code });
+      if (!reward) {
+        reward = await Reward.create({
+          name: rewardName,
+          description: `Earned by acing the ${challenge.category} daily challenge.`,
+          type: 'discount_pct',
+          discountPct,
+          code,
+          isActive: true,
+          source: 'challenge_win',
+        });
+      }
+      const ur = await UserReward.create({
+        user: userId,
+        reward: reward._id,
+        source: 'challenge_win',
+        // 7-day window matching the spin-wheel pattern.
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      });
+      discountCoupon = code;
+      userRewardId = String(ur._id);
+    }
+
+    await progressMissions(userId, 'challenge_win', 1);
   } else {
     xpAwarded = score * 10;
     const user = await User.findById(userId);
@@ -168,7 +221,12 @@ export async function submitDailyAnswers(
 
   console.log(`[challenge] daily ${challengeId} submitted by ${userId}: ${score}/${total}`);
 
-  return { score, total, allCorrect, xpAwarded, pointsAwarded, discountPct, answers: gradedAnswers };
+  return {
+    score, total, allCorrect,
+    xpAwarded, pointsAwarded, discountPct,
+    discountCoupon, userRewardId,
+    answers: gradedAnswers,
+  };
 }
 
 export async function createPvpChallenge(challengerId: string | Types.ObjectId, category: Category = 'general') {
@@ -271,6 +329,7 @@ export async function submitPvpAnswer(
         winnerUser.challengeWins += 1;
         await winnerUser.save();
       }
+      await progressMissions(ranked[0].user, 'challenge_win', 1);
     }
   }
 

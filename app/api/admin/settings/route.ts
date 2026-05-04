@@ -11,7 +11,12 @@ export const runtime = 'nodejs';
 
 const ALLOWED_FIELDS = [
   'appName', 'logoUrl', 'brandColor', 'goldColor',
-  'heroBadge', 'heroTitle', 'heroSubtitle', 'heroPrimaryCta', 'heroSecondaryCta',
+  // Hero (English + Arabic suffix counterparts)
+  'heroBadge', 'heroBadgeAr',
+  'heroTitle', 'heroTitleAr',
+  'heroSubtitle', 'heroSubtitleAr',
+  'heroPrimaryCta', 'heroSecondaryCta',
+  // Feature cards / banners contain bilingual sub-fields inside their array elements
   'featureCards', 'banners', 'featuredItems',
   'dailyChallengeReward', 'xpPerLevelCoeff', 'deliveryFee', 'deliveryCities',
 ] as const;

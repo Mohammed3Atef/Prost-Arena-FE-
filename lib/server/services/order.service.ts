@@ -41,7 +41,17 @@ export function calcDiscount(reward: IReward, subtotal: number, deliveryFee = 0)
   }
 }
 
-async function progressMissions(userId: string | Types.ObjectId, type: string, increment: number) {
+/**
+ * Bumps every active mission of the given type by `increment` for this user.
+ * Auto-completes missions when progress >= target so the customer's claim
+ * button lights up. Exported so other services (spin, challenge, auth) can
+ * call it from their own event hooks without re-implementing the logic.
+ */
+export async function progressMissions(
+  userId: string | Types.ObjectId,
+  type: string,
+  increment: number,
+) {
   try {
     const missions = await Mission.find({ type, isActive: true }).lean();
     for (const mission of missions) {
@@ -57,7 +67,7 @@ async function progressMissions(userId: string | Types.ObjectId, type: string, i
       }
     }
   } catch (err) {
-    console.warn('[order] mission progress update failed:', err);
+    console.warn(`[mission] progress update failed for type=${type}:`, err);
   }
 }
 
@@ -76,6 +86,8 @@ async function checkReferralQualification(order: IOrder, userId: string | Types.
 
     await User.findByIdAndUpdate(referral.referrer, { $inc: { xp: XP_PER_REFERRAL, points: 50 } });
     await User.findByIdAndUpdate(referral.referred, { $inc: { xp: XP_PER_REFERRAL, points: 25 } });
+
+    await progressMissions(referral.referrer, 'referral', 1);
 
     console.log(`[order] referral ${referral._id} rewarded`);
   } catch (err) {
@@ -103,6 +115,27 @@ async function awardOrderRewards(order: IOrder, userId: string | Types.ObjectId)
   await Promise.all([user.save(), order.save()]);
 
   await progressMissions(userId, 'order_count', 1);
+  await progressMissions(userId, 'spend_amount', Math.round(order.total));
+
+  // order_new_item: count items the user is ordering for the first time ever.
+  // Compare this order's menuItem ids against the distinct list of items the
+  // user has ever ordered before THIS order. Anything not in the prior list
+  // is a "first time" — bump the mission by that count.
+  try {
+    const itemIds = order.items.map((i: any) => String(i.menuItem));
+    const priorItems: any[] = await Order.distinct('items.menuItem', {
+      user: userId,
+      _id: { $ne: order._id },
+    });
+    const seen = new Set(priorItems.map(String));
+    const newItemCount = itemIds.filter((id: string) => !seen.has(id)).length;
+    if (newItemCount > 0) {
+      await progressMissions(userId, 'order_new_item', newItemCount);
+    }
+  } catch (err) {
+    console.warn('[order] order_new_item progress failed:', err);
+  }
+
   await checkReferralQualification(order, userId);
 
   if (didLevelUp) console.log(`[order] user ${userId} levelled up to ${newLevel}`);

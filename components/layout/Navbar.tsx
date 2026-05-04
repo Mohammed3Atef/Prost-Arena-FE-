@@ -15,6 +15,8 @@ import { cn } from '../../lib/utils';
 const NAV_LINKS = [
   { href: '/menu',        labelKey: 'nav.menu' },
   { href: '/challenges',  labelKey: 'nav.challenges' },
+  { href: '/missions',    labelKey: 'nav.missions',  authOnly: true },
+  { href: '/rewards',     labelKey: 'nav.rewards',   authOnly: true },
   { href: '/leaderboard', labelKey: 'nav.leaderboard' },
   { href: '/spin',        labelKey: 'nav.spin' },
 ];
@@ -45,7 +47,7 @@ export default function Navbar() {
 
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-1">
-            {NAV_LINKS.map(({ href, labelKey }) => (
+            {NAV_LINKS.filter((l) => !l.authOnly || effectiveUser).map(({ href, labelKey }) => (
               <Link
                 key={href}
                 href={href}
@@ -154,7 +156,7 @@ export default function Navbar() {
             </Link>
           )}
 
-          {NAV_LINKS.map(({ href, labelKey }) => (
+          {NAV_LINKS.filter((l) => !l.authOnly || effectiveUser).map(({ href, labelKey }) => (
             <Link key={href} href={href} onClick={() => setOpen(false)}
               className={cn('flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors',
                 pathname === href ? 'bg-brand-500 text-white' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-arena-700')}>

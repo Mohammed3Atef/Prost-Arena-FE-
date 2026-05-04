@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Edit2, Trash2, X, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, ToggleLeft, ToggleRight, BarChart3, ExternalLink } from 'lucide-react';
 import api from '../../../services/api/client';
 import { cn } from '../../../lib/utils';
 import toast from 'react-hot-toast';
@@ -140,6 +140,23 @@ export default function AdminRewardsPage() {
 
   const filtered = typeFilter ? rewards.filter((r) => r.type === typeFilter) : rewards;
 
+  const [usage, setUsage] = useState<any | null>(null);
+  const [usageLoading, setUsageLoading] = useState(false);
+
+  const openUsage = async (r: Reward) => {
+    setUsage({ reward: r, counts: { total: 0, active: 0, used: 0, expired: 0 }, items: [] });
+    setUsageLoading(true);
+    try {
+      const { data } = await api.get(`/admin/rewards/${r._id}/usage`);
+      setUsage(data.data ?? data);
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || 'Failed to load usage');
+      setUsage(null);
+    } finally {
+      setUsageLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -194,7 +211,7 @@ export default function AdminRewardsPage() {
               <tbody>
                 {filtered.map((r, i) => (
                   <motion.tr key={r._id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}
-                    className={cn('border-t border-gray-100 dark:border-arena-700 hover:bg-gray-50 dark:hover:bg-arena-750 transition-colors',
+                    className={cn('border-t border-gray-100 dark:border-arena-700 hover:bg-gray-50 dark:hover:bg-arena-700 transition-colors',
                       !r.isActive && 'opacity-50')}>
                     <td className="px-4 py-3">
                       <p className="font-semibold text-gray-900 dark:text-gray-100">{r.name}</p>
@@ -216,8 +233,15 @@ export default function AdminRewardsPage() {
                       {r.type === 'xp_boost'       && `${r.discountPct}× XP`}
                       {r.type === 'points_grant'   && `${r.discountFixed} pts`}
                     </td>
-                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">
-                      {r.usedCount}/{r.usageLimit ?? '∞'}
+                    <td className="px-4 py-3 text-xs">
+                      <button
+                        onClick={() => openUsage(r)}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-900/20 text-gray-600 dark:text-gray-300 hover:text-brand-500 transition-colors"
+                        title="View who used this reward"
+                      >
+                        {r.usedCount}/{r.usageLimit ?? '∞'}
+                        <BarChart3 size={11} />
+                      </button>
                     </td>
                     <td className="px-4 py-3">
                       <button onClick={() => toggleActive(r)}>
@@ -361,6 +385,108 @@ export default function AdminRewardsPage() {
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Usage drawer */}
+      <AnimatePresence>
+        {usage && (
+          <>
+            <motion.div
+              key="usage-bd"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 z-40"
+              onClick={() => setUsage(null)}
+            />
+            <motion.div
+              key="usage-dr"
+              initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="fixed inset-y-0 end-0 w-full sm:max-w-lg bg-white dark:bg-arena-800 z-50 flex flex-col shadow-2xl"
+            >
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-arena-700">
+                <div className="min-w-0">
+                  <h2 className="font-bold text-gray-900 dark:text-gray-100 truncate">
+                    {usage.reward.name}
+                  </h2>
+                  {usage.reward.code && (
+                    <p className="text-xs font-mono text-gray-500 mt-0.5">{usage.reward.code}</p>
+                  )}
+                </div>
+                <button onClick={() => setUsage(null)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-arena-700">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                <div className="grid grid-cols-4 gap-2">
+                  <div className="card p-2.5 text-center">
+                    <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{usage.counts.total}</p>
+                    <p className="text-[10px] uppercase tracking-wide text-gray-500 mt-0.5">Issued</p>
+                  </div>
+                  <div className="card p-2.5 text-center">
+                    <p className="text-lg font-bold text-blue-500">{usage.counts.active}</p>
+                    <p className="text-[10px] uppercase tracking-wide text-gray-500 mt-0.5">Active</p>
+                  </div>
+                  <div className="card p-2.5 text-center">
+                    <p className="text-lg font-bold text-green-500">{usage.counts.used}</p>
+                    <p className="text-[10px] uppercase tracking-wide text-gray-500 mt-0.5">Used</p>
+                  </div>
+                  <div className="card p-2.5 text-center">
+                    <p className="text-lg font-bold text-gray-400">{usage.counts.expired}</p>
+                    <p className="text-[10px] uppercase tracking-wide text-gray-500 mt-0.5">Expired</p>
+                  </div>
+                </div>
+
+                {usageLoading ? (
+                  <div className="space-y-2">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <div key={i} className="h-16 rounded-xl bg-gray-100 dark:bg-arena-700 animate-pulse" />
+                    ))}
+                  </div>
+                ) : usage.items.length === 0 ? (
+                  <div className="card p-8 text-center text-sm text-gray-400">
+                    Nobody has earned this reward yet.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {usage.items.map((item: any) => (
+                      <div key={item._id} className="card p-3 flex items-center gap-3">
+                        <div className={cn(
+                          'w-2 h-10 rounded-full shrink-0',
+                          item.status === 'used'    ? 'bg-green-500' :
+                          item.status === 'active'  ? 'bg-blue-500' :
+                          'bg-gray-300 dark:bg-arena-600',
+                        )} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                            {item.user?.name || 'Deleted user'}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate">
+                            {item.user?.email || '—'} · earned {new Date(item.createdAt).toLocaleDateString()}
+                          </p>
+                          {item.usedOnOrder && (
+                            <p className="text-xs text-green-600 dark:text-green-400 mt-0.5 inline-flex items-center gap-1">
+                              Used on #{item.usedOnOrder.orderNumber}
+                              <ExternalLink size={10} />
+                            </p>
+                          )}
+                        </div>
+                        <span className={cn(
+                          'text-[10px] uppercase tracking-wide font-bold px-2 py-0.5 rounded-full shrink-0',
+                          item.status === 'used'    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
+                          item.status === 'active'  ? 'bg-blue-100  dark:bg-blue-900/30  text-blue-700  dark:text-blue-400' :
+                          'bg-gray-100 dark:bg-arena-700 text-gray-500',
+                        )}>
+                          {item.status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </div>

@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import { cn } from '../../../lib/utils';
 import { useSiteSettings } from '../../../components/layout/SiteSettingsProvider';
 import { useConfirm } from '../../../components/ui/ConfirmProvider';
+import { FieldFloat } from '../../../components/ui/FieldFloat';
 
 type Tab = 'branding' | 'hero' | 'banners' | 'featured' | 'delivery' | 'rules';
 
@@ -58,8 +59,11 @@ export default function AdminSettingsPage() {
         brandColor:    form.brandColor,
         goldColor:     form.goldColor,
         heroBadge:     form.heroBadge,
+        heroBadgeAr:    form.heroBadgeAr ?? '',
         heroTitle:     form.heroTitle,
+        heroTitleAr:    form.heroTitleAr ?? '',
         heroSubtitle:  form.heroSubtitle,
+        heroSubtitleAr: form.heroSubtitleAr ?? '',
         heroPrimaryCta:   form.heroPrimaryCta,
         heroSecondaryCta: form.heroSecondaryCta,
         featureCards:  form.featureCards,
@@ -85,9 +89,12 @@ export default function AdminSettingsPage() {
         goldColor:  next.goldColor,
         appName:    next.appName,
         logoUrl:    next.logoUrl,
-        heroBadge:    next.heroBadge,
-        heroTitle:    next.heroTitle,
-        heroSubtitle: next.heroSubtitle,
+        heroBadge:      next.heroBadge,
+        heroBadgeAr:    next.heroBadgeAr,
+        heroTitle:      next.heroTitle,
+        heroTitleAr:    next.heroTitleAr,
+        heroSubtitle:   next.heroSubtitle,
+        heroSubtitleAr: next.heroSubtitleAr,
         heroPrimaryCta:   next.heroPrimaryCta,
         heroSecondaryCta: next.heroSecondaryCta,
         featureCards:     next.featureCards,
@@ -127,21 +134,23 @@ export default function AdminSettingsPage() {
         </button>
       </div>
 
-      <div className="card p-1 inline-flex gap-1 flex-wrap">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={cn(
-              'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
-              tab === t.key
-                ? 'bg-brand-500 text-white'
-                : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-arena-700',
-            )}
-          >
-            {t.label}
-          </button>
-        ))}
+      <div className="overflow-x-auto -mx-4 px-4">
+        <div className="card p-1 inline-flex gap-1 w-max">
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={cn(
+                'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap',
+                tab === t.key
+                  ? 'bg-brand-500 text-white'
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-arena-700',
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
@@ -174,17 +183,17 @@ function BrandingTab({ form, update }: any) {
   return (
     <div className="space-y-6">
       <Section title="App identity">
-        <Field label="App name">
+        <FieldFloat label="App name">
           <input className="input" value={form.appName} onChange={(e) => update({ appName: e.target.value })} />
-        </Field>
-        <Field label="Logo URL">
+        </FieldFloat>
+        <FieldFloat label="Logo URL">
           <input className="input" value={form.logoUrl} onChange={(e) => update({ logoUrl: e.target.value })} />
           {form.logoUrl && (
             <div className="mt-2 inline-flex p-3 bg-gray-50 dark:bg-arena-800 rounded-xl">
               <img src={form.logoUrl} alt="logo preview" className="h-16 w-auto rounded-md" />
             </div>
           )}
-        </Field>
+        </FieldFloat>
       </Section>
 
       <Section title="Theme color">
@@ -234,42 +243,74 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
 /* ─────────────────────────────────────────── HERO ─────────────── */
 
 function HeroTab({ form, update, updateNested }: any) {
+  const [lang, setLang] = useState<'en' | 'ar'>('en');
+  const isAr = lang === 'ar';
+  const dir = isAr ? 'rtl' : 'ltr';
   return (
     <div className="space-y-6">
+      <LangTabs lang={lang} setLang={setLang} />
       <Section title="Hero section">
         <p className="text-xs text-gray-500 dark:text-gray-400">
           Hero title supports a gradient highlight: wrap a word with <code>{'{{accent:WORD}}'}</code> — e.g. <code>EAT. PLAY. {'{{accent:WIN}}'}.</code>
         </p>
-        <Field label="Badge">
-          <input className="input" value={form.heroBadge} onChange={(e) => update({ heroBadge: e.target.value })} />
-        </Field>
-        <Field label="Headline">
-          <input className="input font-display" value={form.heroTitle} onChange={(e) => update({ heroTitle: e.target.value })} />
-        </Field>
-        <Field label="Subheadline">
-          <textarea className="input min-h-[80px]" value={form.heroSubtitle} onChange={(e) => update({ heroSubtitle: e.target.value })} />
-        </Field>
+        {isAr ? (
+          <>
+            <FieldFloat label="Badge (Arabic)">
+              <input className="input" dir={dir} value={form.heroBadgeAr ?? ''} onChange={(e) => update({ heroBadgeAr: e.target.value })} placeholder="اتركه فارغًا للرجوع إلى الإنجليزية" />
+            </FieldFloat>
+            <FieldFloat label="Headline (Arabic)">
+              <input className="input font-display" dir={dir} value={form.heroTitleAr ?? ''} onChange={(e) => update({ heroTitleAr: e.target.value })} placeholder="مثال: كل. ألعب. {{accent:اربح}}." />
+            </FieldFloat>
+            <FieldFloat label="Subheadline (Arabic)">
+              <textarea className="input min-h-[80px]" dir={dir} value={form.heroSubtitleAr ?? ''} onChange={(e) => update({ heroSubtitleAr: e.target.value })} />
+            </FieldFloat>
+          </>
+        ) : (
+          <>
+            <FieldFloat label="Badge">
+              <input className="input" value={form.heroBadge ?? ''} onChange={(e) => update({ heroBadge: e.target.value })} />
+            </FieldFloat>
+            <FieldFloat label="Headline">
+              <input className="input font-display" value={form.heroTitle ?? ''} onChange={(e) => update({ heroTitle: e.target.value })} />
+            </FieldFloat>
+            <FieldFloat label="Subheadline">
+              <textarea className="input min-h-[80px]" value={form.heroSubtitle ?? ''} onChange={(e) => update({ heroSubtitle: e.target.value })} />
+            </FieldFloat>
+          </>
+        )}
       </Section>
 
       <Section title="Primary CTA">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Field label="Label">
-            <input className="input" value={form.heroPrimaryCta?.label ?? ''} onChange={(e) => updateNested('heroPrimaryCta', { label: e.target.value })} />
-          </Field>
-          <Field label="URL">
+          {isAr ? (
+            <FieldFloat label="Label (Arabic)">
+              <input className="input" dir={dir} value={form.heroPrimaryCta?.labelAr ?? ''} onChange={(e) => updateNested('heroPrimaryCta', { labelAr: e.target.value })} placeholder="اتركه فارغًا للرجوع إلى الإنجليزية" />
+            </FieldFloat>
+          ) : (
+            <FieldFloat label="Label">
+              <input className="input" value={form.heroPrimaryCta?.label ?? ''} onChange={(e) => updateNested('heroPrimaryCta', { label: e.target.value })} />
+            </FieldFloat>
+          )}
+          <FieldFloat label="URL">
             <input className="input" value={form.heroPrimaryCta?.href ?? ''} onChange={(e) => updateNested('heroPrimaryCta', { href: e.target.value })} />
-          </Field>
+          </FieldFloat>
         </div>
       </Section>
 
       <Section title="Secondary CTA (logged-out only)">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Field label="Label">
-            <input className="input" value={form.heroSecondaryCta?.label ?? ''} onChange={(e) => updateNested('heroSecondaryCta', { label: e.target.value })} />
-          </Field>
-          <Field label="URL">
+          {isAr ? (
+            <FieldFloat label="Label (Arabic)">
+              <input className="input" dir={dir} value={form.heroSecondaryCta?.labelAr ?? ''} onChange={(e) => updateNested('heroSecondaryCta', { labelAr: e.target.value })} placeholder="اتركه فارغًا للرجوع إلى الإنجليزية" />
+            </FieldFloat>
+          ) : (
+            <FieldFloat label="Label">
+              <input className="input" value={form.heroSecondaryCta?.label ?? ''} onChange={(e) => updateNested('heroSecondaryCta', { label: e.target.value })} />
+            </FieldFloat>
+          )}
+          <FieldFloat label="URL">
             <input className="input" value={form.heroSecondaryCta?.href ?? ''} onChange={(e) => updateNested('heroSecondaryCta', { href: e.target.value })} />
-          </Field>
+          </FieldFloat>
         </div>
       </Section>
     </div>
@@ -279,12 +320,15 @@ function HeroTab({ form, update, updateNested }: any) {
 /* ─────────────────────────────────────────── BANNERS ──────────── */
 
 function BannersTab({ form, update, confirm }: any) {
+  const [lang, setLang] = useState<'en' | 'ar'>('en');
+  const isAr = lang === 'ar';
+  const dir = isAr ? 'rtl' : 'ltr';
   const banners = form.banners ?? [];
   const setBanners = (next: any[]) => update({ banners: next });
 
   const addBanner = () => setBanners([
     ...banners,
-    { title: 'New banner', subtitle: '', image: '', ctaLabel: 'Learn more', ctaUrl: '#', isActive: true, sortOrder: banners.length },
+    { title: 'New banner', titleAr: '', subtitle: '', subtitleAr: '', image: '', ctaLabel: 'Learn more', ctaLabelAr: '', ctaUrl: '#', isActive: true, sortOrder: banners.length },
   ]);
 
   const removeBanner = async (idx: number) => {
@@ -312,11 +356,14 @@ function BannersTab({ form, update, confirm }: any) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <p className="text-sm text-gray-500 dark:text-gray-400">{banners.length} banner{banners.length !== 1 ? 's' : ''}</p>
-        <button onClick={addBanner} className="btn-secondary text-xs gap-1.5">
-          <Plus size={14} /> Add banner
-        </button>
+        <div className="flex items-center gap-3">
+          <LangTabs lang={lang} setLang={setLang} />
+          <button onClick={addBanner} className="btn-secondary text-xs gap-1.5">
+            <Plus size={14} /> Add banner
+          </button>
+        </div>
       </div>
       {banners.length === 0 && (
         <div className="card p-8 text-center text-sm text-gray-400">No banners yet. Add one to spotlight a promo on the home page.</div>
@@ -336,21 +383,39 @@ function BannersTab({ form, update, confirm }: any) {
             </button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Title">
-              <input className="input" value={b.title ?? ''} onChange={(e) => updateBanner(idx, { title: e.target.value })} />
-            </Field>
-            <Field label="Subtitle">
-              <input className="input" value={b.subtitle ?? ''} onChange={(e) => updateBanner(idx, { subtitle: e.target.value })} />
-            </Field>
-            <Field label="Image URL">
+            {isAr ? (
+              <FieldFloat label="Title (Arabic)">
+                <input className="input" dir={dir} value={b.titleAr ?? ''} onChange={(e) => updateBanner(idx, { titleAr: e.target.value })} placeholder="اتركه فارغًا للرجوع إلى الإنجليزية" />
+              </FieldFloat>
+            ) : (
+              <FieldFloat label="Title">
+                <input className="input" value={b.title ?? ''} onChange={(e) => updateBanner(idx, { title: e.target.value })} />
+              </FieldFloat>
+            )}
+            {isAr ? (
+              <FieldFloat label="Subtitle (Arabic)">
+                <input className="input" dir={dir} value={b.subtitleAr ?? ''} onChange={(e) => updateBanner(idx, { subtitleAr: e.target.value })} placeholder="اتركه فارغًا للرجوع إلى الإنجليزية" />
+              </FieldFloat>
+            ) : (
+              <FieldFloat label="Subtitle">
+                <input className="input" value={b.subtitle ?? ''} onChange={(e) => updateBanner(idx, { subtitle: e.target.value })} />
+              </FieldFloat>
+            )}
+            <FieldFloat label="Image URL">
               <input className="input" value={b.image ?? ''} onChange={(e) => updateBanner(idx, { image: e.target.value })} placeholder="https://..." />
-            </Field>
-            <Field label="CTA URL">
+            </FieldFloat>
+            <FieldFloat label="CTA URL">
               <input className="input" value={b.ctaUrl ?? ''} onChange={(e) => updateBanner(idx, { ctaUrl: e.target.value })} />
-            </Field>
-            <Field label="CTA label">
-              <input className="input" value={b.ctaLabel ?? ''} onChange={(e) => updateBanner(idx, { ctaLabel: e.target.value })} />
-            </Field>
+            </FieldFloat>
+            {isAr ? (
+              <FieldFloat label="CTA label (Arabic)">
+                <input className="input" dir={dir} value={b.ctaLabelAr ?? ''} onChange={(e) => updateBanner(idx, { ctaLabelAr: e.target.value })} placeholder="اتركه فارغًا للرجوع إلى الإنجليزية" />
+              </FieldFloat>
+            ) : (
+              <FieldFloat label="CTA label">
+                <input className="input" value={b.ctaLabel ?? ''} onChange={(e) => updateBanner(idx, { ctaLabel: e.target.value })} />
+              </FieldFloat>
+            )}
           </div>
         </div>
       ))}
@@ -443,7 +508,7 @@ function DeliveryTab({ form, update, confirm }: any) {
         <p className="text-xs text-gray-500 dark:text-gray-400">
           Used when the customer’s address has no matching city. Set to 0 for free delivery.
         </p>
-        <Field label="Default fee (EGP)">
+        <FieldFloat label="Default fee (EGP)">
           <input
             type="number"
             className="input"
@@ -452,7 +517,7 @@ function DeliveryTab({ form, update, confirm }: any) {
             step={1}
             onChange={(e) => update({ deliveryFee: Number(e.target.value) || 0 })}
           />
-        </Field>
+        </FieldFloat>
       </Section>
 
       <Section title="Delivery cities">
@@ -514,18 +579,18 @@ function RulesTab({ form, update, updateNested }: any) {
           What users earn when they complete the daily quiz challenge.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Field label="XP">
+          <FieldFloat label="XP">
             <input type="number" className="input" value={form.dailyChallengeReward?.xp ?? 0}
               onChange={(e) => updateNested('dailyChallengeReward', { xp: Number(e.target.value) || 0 })} />
-          </Field>
-          <Field label="Points">
+          </FieldFloat>
+          <FieldFloat label="Points">
             <input type="number" className="input" value={form.dailyChallengeReward?.points ?? 0}
               onChange={(e) => updateNested('dailyChallengeReward', { points: Number(e.target.value) || 0 })} />
-          </Field>
-          <Field label="Discount %">
+          </FieldFloat>
+          <FieldFloat label="Discount %">
             <input type="number" className="input" value={form.dailyChallengeReward?.discountPct ?? 0}
               onChange={(e) => updateNested('dailyChallengeReward', { discountPct: Number(e.target.value) || 0 })} />
-          </Field>
+          </FieldFloat>
         </div>
       </Section>
 
@@ -533,7 +598,7 @@ function RulesTab({ form, update, updateNested }: any) {
         <p className="text-xs text-gray-500 dark:text-gray-400">
           Flat delivery fee charged on every delivery order (in EGP). Set to 0 for free delivery.
         </p>
-        <Field label="Delivery fee (EGP)">
+        <FieldFloat label="Delivery fee (EGP)">
           <input
             type="number"
             className="input"
@@ -542,18 +607,18 @@ function RulesTab({ form, update, updateNested }: any) {
             step={1}
             onChange={(e) => update({ deliveryFee: Number(e.target.value) || 0 })}
           />
-        </Field>
+        </FieldFloat>
       </Section>
 
       <Section title="XP curve">
         <p className="text-xs text-gray-500 dark:text-gray-400">
           XP needed to reach level <em>N</em> = <code>N² × coeff</code>. Lower coeff = faster levelling.
         </p>
-        <Field label="XP per level coefficient">
+        <FieldFloat label="XP per level coefficient">
           <input type="number" className="input" value={form.xpPerLevelCoeff ?? 100}
             min={10} step={10}
             onChange={(e) => update({ xpPerLevelCoeff: Number(e.target.value) || 100 })} />
-        </Field>
+        </FieldFloat>
         <div className="text-xs text-gray-500 dark:text-gray-400 grid grid-cols-3 gap-2 mt-2 font-mono">
           {[1, 2, 3, 5, 10, 20].map((n) => (
             <div key={n} className="px-2 py-1 rounded bg-gray-50 dark:bg-arena-700">
@@ -577,11 +642,24 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function LangTabs({ lang, setLang }: { lang: 'en' | 'ar'; setLang: (l: 'en' | 'ar') => void }) {
   return (
-    <div>
-      <label className="field-label">{label}</label>
-      {children}
+    <div className="card p-1 inline-flex gap-1 text-xs">
+      {(['en', 'ar'] as const).map((l) => (
+        <button
+          key={l}
+          type="button"
+          onClick={() => setLang(l)}
+          className={cn(
+            'px-3 py-1 rounded-md font-medium transition-colors',
+            lang === l
+              ? 'bg-brand-500 text-white'
+              : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-arena-700',
+          )}
+        >
+          {l === 'en' ? 'English' : 'العربية'}
+        </button>
+      ))}
     </div>
   );
 }

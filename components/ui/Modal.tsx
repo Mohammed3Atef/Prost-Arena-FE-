@@ -10,6 +10,9 @@ interface ModalProps {
   open:          boolean;
   onOpenChange:  (open: boolean) => void;
   title?:        ReactNode;
+  /** Required by Radix for screen readers. If `title` isn't visible, set this
+   *  to a short description of the dialog and it'll be rendered sr-only. */
+  a11yTitle?:    string;
   description?:  ReactNode;
   children?:     ReactNode;
   footer?:       ReactNode;
@@ -47,6 +50,7 @@ export default function Modal({
   open,
   onOpenChange,
   title,
+  a11yTitle,
   description,
   children,
   footer,
@@ -87,6 +91,15 @@ export default function Modal({
                   className
                 )}
               >
+                {/* Radix requires a DialogTitle for screen readers. If the
+                    consumer didn't pass a `title`, render an sr-only fallback
+                    from `a11yTitle` (or a generic label). */}
+                {!title && (
+                  <DialogPrimitive.Title className="sr-only">
+                    {a11yTitle || 'Dialog'}
+                  </DialogPrimitive.Title>
+                )}
+
                 {(title || showClose) && (
                   <div className="flex items-start justify-between gap-4 px-5 sm:px-6 pt-5 pb-2">
                     <div className="flex-1 min-w-0">

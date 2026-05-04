@@ -9,10 +9,13 @@ export type PublicSiteSettings = {
   brandColor:     string;
   goldColor:      string;
   heroBadge:      string;
+  heroBadgeAr:    string;
   heroTitle:      string;
+  heroTitleAr:    string;
   heroSubtitle:   string;
-  heroPrimaryCta:   { label: string; href: string };
-  heroSecondaryCta: { label: string; href: string };
+  heroSubtitleAr: string;
+  heroPrimaryCta:   { label: string; labelAr: string; href: string };
+  heroSecondaryCta: { label: string; labelAr: string; href: string };
   featureCards:   ISiteSettings['featureCards'];
   banners:        ISiteSettings['banners'];
   featuredItems:  unknown[];
@@ -28,15 +31,18 @@ const FALLBACK: PublicSiteSettings = {
   brandColor:     '#ff6b35',
   goldColor:      '#f59e0b',
   heroBadge:      '🎮 Gamified Food Experience',
+  heroBadgeAr:    '',
   heroTitle:      'EAT. PLAY. {{accent:WIN}}.',
+  heroTitleAr:    '',
   heroSubtitle:   'Order food, crush challenges, spin the wheel, and climb the leaderboard. Every meal is an adventure.',
-  heroPrimaryCta:   { label: 'Start Ordering',  href: '/menu' },
-  heroSecondaryCta: { label: 'Create Account',  href: '/register' },
+  heroSubtitleAr: '',
+  heroPrimaryCta:   { label: 'Start Ordering',  labelAr: '', href: '/menu' },
+  heroSecondaryCta: { label: 'Create Account',  labelAr: '', href: '/register' },
   featureCards:   [
-    { icon: '🍔', title: 'Order & Earn XP',  desc: 'Every order levels you up', href: '/menu',        color: 'from-brand-500 to-brand-600'   },
-    { icon: '⚡', title: 'Daily Challenges', desc: 'Win big discounts daily',   href: '/challenges',  color: 'from-gold-500 to-gold-600'     },
-    { icon: '🎡', title: 'Spin the Wheel',   desc: 'Free daily spin awaits',    href: '/spin',        color: 'from-purple-500 to-purple-600' },
-    { icon: '🏆', title: 'Leaderboard',      desc: 'Compete with the city',     href: '/leaderboard', color: 'from-green-500 to-green-600'   },
+    { icon: '🍔', title: 'Order & Earn XP',  titleAr: '', desc: 'Every order levels you up', descAr: '', href: '/menu',        color: 'from-brand-500 to-brand-600'   },
+    { icon: '⚡', title: 'Daily Challenges', titleAr: '', desc: 'Win big discounts daily',   descAr: '', href: '/challenges',  color: 'from-gold-500 to-gold-600'     },
+    { icon: '🎡', title: 'Spin the Wheel',   titleAr: '', desc: 'Free daily spin awaits',    descAr: '', href: '/spin',        color: 'from-purple-500 to-purple-600' },
+    { icon: '🏆', title: 'Leaderboard',      titleAr: '', desc: 'Compete with the city',     descAr: '', href: '/leaderboard', color: 'from-green-500 to-green-600'   },
   ],
   banners:        [],
   featuredItems:  [],

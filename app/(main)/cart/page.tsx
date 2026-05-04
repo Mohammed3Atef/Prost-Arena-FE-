@@ -306,28 +306,48 @@ export default function CartPage() {
             </div>
           )}
 
-          {/* Coupon */}
+          {/* Coupon — also shows the "applied" state when a UserReward (clicked
+              from the Rewards section above) is the source of the discount, so
+              the user can see what's currently applied either way. */}
           <div className="card p-4">
             <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
               <Tag size={16} className="text-brand-500" /> {t('cart.couponCode')}
             </p>
-            {coupon ? (
-              <div className="flex items-center justify-between bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-xl px-4 py-3">
-                <div>
-                  <p className="font-mono font-bold text-green-700 dark:text-green-400">{coupon}</p>
-                  <p className="text-xs text-green-600 dark:text-green-500">-{t('cart.saved', { amount: formatCurrency(discount, locale) })}</p>
+            {(() => {
+              const appliedReward = userRewardId
+                ? myRewards.find((ur) => ur._id === userRewardId)?.reward
+                : null;
+              const appliedLabel = coupon
+                ?? (appliedReward as any)?.code
+                ?? appliedReward?.name
+                ?? null;
+
+              if (appliedLabel) {
+                return (
+                  <div className="flex items-center justify-between bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-xl px-4 py-3">
+                    <div className="min-w-0">
+                      <p className="font-mono font-bold text-green-700 dark:text-green-400 truncate">{appliedLabel}</p>
+                      <p className="text-xs text-green-600 dark:text-green-500">
+                        {coupon ? '' : '🎁 '}-{t('cart.saved', { amount: formatCurrency(discount, locale) })}
+                      </p>
+                    </div>
+                    <button onClick={removeCoupon} className="text-red-400 hover:text-red-600 text-xs font-semibold shrink-0 ms-3">
+                      {t('cart.remove')}
+                    </button>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="flex gap-2">
+                  <input value={couponInput} onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                    placeholder={t('cart.enterCode')} className="input flex-1 font-mono uppercase" />
+                  <button onClick={handleApplyCoupon} disabled={couponLoading || !couponInput.trim()} className="btn-primary px-4 py-2 text-sm disabled:opacity-50">
+                    {couponLoading ? '…' : t('cart.apply')}
+                  </button>
                 </div>
-                <button onClick={removeCoupon} className="text-red-400 hover:text-red-600 text-xs font-semibold">{t('cart.remove')}</button>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <input value={couponInput} onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                  placeholder={t('cart.enterCode')} className="input flex-1 font-mono uppercase" />
-                <button onClick={handleApplyCoupon} disabled={couponLoading || !couponInput.trim()} className="btn-primary px-4 py-2 text-sm disabled:opacity-50">
-                  {couponLoading ? '…' : t('cart.apply')}
-                </button>
-              </div>
-            )}
+              );
+            })()}
           </div>
 
           {/* Summary */}
